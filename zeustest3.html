@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>次音波轉音波 v7 — 含中文語音辨識</title>
+<style>
+  :root{--bg:#0a0f18;--card:#101621;--accent:#1fb64f;--muted:#9fb0c0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;margin:0;padding:20px;background:var(--bg);color:#e6e8f0;-webkit-font-smoothing:antialiased}
+  .card{max-width:980px;margin:20px auto;background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 24px rgba(0,0,0,0.6)}
+  h1{margin:0 0 12px;font-size:22px;color:#7fff7f}
+  h3{color:#7fff7f;margin-top:20px;}
+  label{display:block;font-size:13px;margin:6px 0;color:#a0b0c0}
+  .range-row{display:flex;align-items:center;gap:10px}
+  input[type=range]{flex:1}
+  button{padding:8px 12px;margin-right:6px;border:none;border-radius:6px;cursor:pointer}
+  button.primary{background:var(--accent);color:#fff}
+  button.secondary{background:#2a3240;color:#e6e8f0}
+  #status{margin-top:10px;font-size:13px;color:var(--muted)}
+  canvas{width:100%;height:220px;background:#000;border-radius:8px;margin-bottom:12px;display:block}
+  #speechText{background:#111821;padding:10px;border-radius:8px;font-size:15px;color:#d0ffd0;min-height:40px;white-space:pre-wrap;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>次音波轉音波 v7 — 含中文語音辨識</h1>
+
+  <canvas id="oscilloscope"></canvas>
+
+  <label>低端頻率 (Hz)：<span id="lowVal">5.0</span></label>
+  <div class="range-row"><input id="lowSlider" type="range" min="0" max="20" step="0.1" value="5"></div>
+
+  <label>高端頻率 (Hz)：<span id="highVal">15.0</span></label>
+  <div class="range-row"><input id="highSlider" type="range" min="0" max="20" step="0.1" value="15"></div>
+
+  <label>頻率倍率 (×)：<span id="multVal">1000</span></label>
+  <div class="range-row"><input id="multSlider" type="range" min="1" max="2000" step="1" value="1000"></div>
+
+  <label>增益 (dB)：<span id="gainVal">20</span></label>
+  <div class="range-row"><input id="gainSlider" type="range" min="0" max="60" step="1" value="20"></div>
+
+  <label>音高 (Pitch)：<span id="pitchVal">1.0x</span></label>
+  <div class="range-row"><input id="pitchSlider" type="range" min="0.5" max="2.0" step="0.01" value="1"></div>
+
+  <div style="margin-top:14px;">
+    <button class="primary" id="startMic">啟用麥克風</button>
+    <button class="secondary" id="stopMic">停止</button>
+  </div>
+
+  <div id="status">等待操作...</div>
+  <div id="errorBox" style="display:none;color:#ff7b7b;margin-top:10px"></div>
+
+  <h3>🎙 中文語音辨識</h3>
+  <div id="speechText">（等待語音輸入...）</div>
+</div>
+
+<script>
+let audioCtx, source, lowpass, bandpass, modNode, gainNode, analyser;
+let micStream;
+let lowFreq=5, highFreq=15, multiplier=1000, gainDB=20, pitch=1.0;
+let tCounter=0;
+const EPS=1e-4;
+
+const canvas=document.getElementById('oscilloscope');
+const ctx=canvas.getContext('2d');
+
+function updateStatus(msg){document.getElementById('status').textContent=msg;}
+
+function setupOscilloscope(){
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvas.clientWidth*dpr;
+  canvas.height=canvas.clientHeight*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function drawOscilloscope(){
+  if(!analyser)return;
+  const bufferLength=analyser.fftSize;
+  const dataArray=new Uint8Array(bufferLength);
+  function draw(){
+    requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(dataArray);
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.lineWidth=2;
+    ctx.strokeStyle='#1fb64f';
+    ctx.beginPath();
+    const sliceWidth=canvas.width/bufferLength;
+    let x=0;
+    for(let i=0;i<bufferLength;i++){
+      let v=dataArray[i]/128.0;
+      let y=v*canvas.height/2;
+      if(i===0)ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+      x+=sliceWidth;
+    }
+    ctx.lineTo(canvas.width,canvas.height/2);
+    ctx.stroke();
+  }
+  draw();
+}
+
+async function startMic(){
+  try{
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    source=audioCtx.createMediaStreamSource(micStream);
+
+    // 低通濾波器 (<20Hz)
+    lowpass=audioCtx.createBiquadFilter();
+    lowpass.type='lowpass';
+    lowpass.frequency.value=Math.min(highFreq,20);
+
+    // 帶通濾波器 (低端~高端)
+    bandpass=audioCtx.createBiquadFilter();
+    bandpass.type='bandpass';
+    bandpass.frequency.value=(lowFreq+highFreq)/2;
+    bandpass.Q.value=Math.max((highFreq-lowFreq)/2,0.001);
+
+    // 調變節點
+    modNode=audioCtx.createScriptProcessor(2048,1,1);
+    modNode.onaudioprocess=(e)=>{
+      const input=e.inputBuffer.getChannelData(0);
+      const output=e.outputBuffer.getChannelData(0);
+      const sr=audioCtx.sampleRate;
+      for(let i=0;i<input.length;i++){
+        const carrier=Math.sin(2*Math.PI*multiplier*(tCounter/sr));
+        output[i]=input[i]*carrier;
+        tCounter++;
+      }
+    };
+
+    gainNode=audioCtx.createGain();
+    gainNode.gain.value=Math.pow(10,gainDB/20);
+
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=2048;
+
+    source.connect(lowpass);
+    lowpass.connect(bandpass);
+    bandpass.connect(modNode);
+    modNode.connect(analyser);
+    modNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    setupOscilloscope();
+    drawOscilloscope();
+    updateFilters();
+    updateStatus('麥克風啟用中...');
+
+    startSpeechRecognition();
+  }catch(err){
+    console.error(err);
+    const box=document.getElementById('errorBox');
+    box.style.display='block';
+    box.textContent='麥克風啟用失敗: '+err.message;
+  }
+}
+
+function stopMic(){
+  if(micStream)micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx)audioCtx.close();
+  updateStatus('已停止');
+}
+
+function updateFilters(){
+  if(!lowpass||!bandpass||!gainNode)return;
+  lowpass.frequency.setTargetAtTime(Math.min(highFreq,20),audioCtx.currentTime,0.01);
+  bandpass.frequency.setTargetAtTime((lowFreq+highFreq)/2,audioCtx.currentTime,0.01);
+  bandpass.Q.setTargetAtTime(Math.max((highFreq-lowFreq)/2,0.001),audioCtx.currentTime,0.01);
+  const gainLinear=Math.pow(10,gainDB/20);
+  if(Math.abs(highFreq-lowFreq)<EPS){
+    gainNode.gain.setTargetAtTime(0,audioCtx.currentTime,0.01);
+  }else{
+    gainNode.gain.setTargetAtTime(gainLinear,audioCtx.currentTime,0.01);
+  }
+}
+
+['low','high','mult','gain','pitch'].forEach(name=>{
+  const s=document.getElementById(name+'Slider');
+  const v=document.getElementById(name+'Val');
+  s.addEventListener('input',()=>{
+    const val=parseFloat(s.value);
+    if(name==='low')lowFreq=val;
+    else if(name==='high')highFreq=val;
+    else if(name==='mult')multiplier=val;
+    else if(name==='gain')gainDB=val;
+    else if(name==='pitch')pitch=val;
+    v.textContent=val.toFixed(name==='mult'?0:(name==='pitch'?2:1));
+    updateFilters();
+  });
+});
+
+document.getElementById('startMic').onclick=startMic;
+document.getElementById('stopMic').onclick=stopMic;
+
+// 🎙️ 中文語音辨識功能
+function startSpeechRecognition(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    document.getElementById('speechText').textContent='❌ 此瀏覽器不支援語音辨識。請使用 Chrome。';
+    return;
+  }
+  const recog=new SpeechRecognition();
+  recog.lang='zh-TW';
+  recog.continuous=true;
+  recog.interimResults=true;
+  const textBox=document.getElementById('speechText');
+  recog.onresult=(event)=>{
+    let text='';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      text+=event.results[i][0].transcript;
+    }
+    textBox.textContent=text.trim();
+  };
+  recog.onerror=(e)=>{
+    console.error('辨識錯誤:',e.error);
+  };
+  recog.onend=()=>{recog.start();}; // 自動重啟確保連續辨識
+  recog.start();
+}
+</script>
+</body>
+</html>
