@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>次音波轉音波 v6.1 — 僅接收 20Hz 以下聲音</title>
+<style>
+  :root{--bg:#0a0f18;--card:#101621;--accent:#1fb64f;--muted:#9fb0c0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;margin:0;padding:20px;background:var(--bg);color:#e6e8f0;-webkit-font-smoothing:antialiased}
+  .card{max-width:980px;margin:20px auto;background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 24px rgba(0,0,0,0.6)}
+  h1{margin:0 0 12px;font-size:22px;color:#7fff7f}
+  label{display:block;font-size:13px;margin:6px 0;color:#a0b0c0}
+  .range-row{display:flex;align-items:center;gap:10px}
+  input[type=range]{flex:1}
+  button{padding:8px 12px;margin-right:6px;border:none;border-radius:6px;cursor:pointer}
+  button.primary{background:var(--accent);color:#fff}
+  button.secondary{background:#2a3240;color:#e6e8f0}
+  #status{margin-top:10px;font-size:13px;color:var(--muted)}
+  canvas{width:100%;height:220px;background:#000;border-radius:8px;margin-bottom:12px;display:block}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>次音波轉音波 v6.1 — 僅接收 20Hz 以下聲音</h1>
+
+  <canvas id="oscilloscope"></canvas>
+
+  <label>低端頻率 (Hz)：<span id="lowVal">5.0</span></label>
+  <div class="range-row"><input id="lowSlider" type="range" min="0" max="20" step="0.1" value="5"></div>
+
+  <label>高端頻率 (Hz)：<span id="highVal">15.0</span></label>
+  <div class="range-row"><input id="highSlider" type="range" min="0" max="20" step="0.1" value="15"></div>
+
+  <label>頻率倍率 (×)：<span id="multVal">1000</span></label>
+  <div class="range-row"><input id="multSlider" type="range" min="1" max="2000" step="1" value="1000"></div>
+
+  <label>增益 (dB)：<span id="gainVal">20</span></label>
+  <div class="range-row"><input id="gainSlider" type="range" min="0" max="60" step="1" value="20"></div>
+
+  <label>音高 (Pitch)：<span id="pitchVal">1.0x</span></label>
+  <div class="range-row"><input id="pitchSlider" type="range" min="0.5" max="2.0" step="0.01" value="1"></div>
+
+  <div style="margin-top:14px;">
+    <button class="primary" id="startMic">啟用麥克風</button>
+    <button class="secondary" id="stopMic">停止</button>
+  </div>
+
+  <div id="status">等待操作...</div>
+  <div id="errorBox" style="display:none;color:#ff7b7b;margin-top:10px"></div>
+</div>
+
+<script>
+// v6.1 修正：
+// 1) 重新連線音訊圖：mod -> (analyser 分支) 與 (gain -> destination)，確保靜音時示波器仍顯示
+// 2) 低端=高端時自動靜音（但不關麥克風）
+// 3) bandpass 參數安全化：自動排序 low/high、避免 Q 為 0 或 NaN
+// 4) multiplier 即時生效（modNode 回呼讀取全域 multiplier）
+// 5) 保留 pitch slider，暫不改變播放（若需作用，請告知期望行為）
+
+let audioCtx, source, lowpass, bandpass, modNode, gainNode, analyser;
+let micStream;
+let lowFreq=5, highFreq=15, multiplier=1000, gainDB=20, pitch=1.0;
+let tCounter=0;
+const EPS = 1e-4; // 用於相等比較
+
+const canvas=document.getElementById('oscilloscope');
+const ctx=canvas.getContext('2d');
+
+function updateStatus(msg){document.getElementById('status').textContent=msg;}
+
+function setupOscilloscope(){
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvas.clientWidth*dpr;
+  canvas.height=canvas.clientHeight*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function drawOscilloscope(){
+  if(!analyser)return;
+  const bufferLength=analyser.fftSize;
+  const dataArray=new Uint8Array(bufferLength);
+  function draw(){
+    requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(dataArray);
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.lineWidth=2;
+    ctx.strokeStyle='#1fb64f';
+    ctx.beginPath();
+    const sliceWidth=canvas.width/bufferLength;
+    let x=0;
+    for(let i=0;i<bufferLength;i++){
+      let v=dataArray[i]/128.0;
+      let y=v*canvas.height/2;
+      if(i===0)ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+      x+=sliceWidth;
+    }
+    ctx.lineTo(canvas.width,canvas.height/2);
+    ctx.stroke();
+  }
+  draw();
+}
+
+async function startMic(){
+  try{
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    source=audioCtx.createMediaStreamSource(micStream);
+
+    // 低通濾波器 (<20Hz，且由高端滑桿上限控制，但不超過20)
+    lowpass=audioCtx.createBiquadFilter();
+    lowpass.type='lowpass';
+    lowpass.frequency.value=Math.min(highFreq,20);
+
+    // 帶通濾波 (0~20Hz)，由低/高滑桿控制
+    bandpass=audioCtx.createBiquadFilter();
+    bandpass.type='bandpass';
+
+    // 調變器（次音搬移到可聽）
+    modNode=audioCtx.createScriptProcessor(2048,1,1);
+    tCounter=0;
+    modNode.onaudioprocess=(e)=>{
+      const input=e.inputBuffer.getChannelData(0);
+      const output=e.outputBuffer.getChannelData(0);
+      const sr=audioCtx.sampleRate;
+      for(let i=0;i<input.length;i++){
+        const carrier=Math.sin(2*Math.PI*multiplier*(tCounter/sr));
+        output[i]=input[i]*carrier; // 只搬移低頻內容（已被前級濾波）
+        tCounter++;
+      }
+    };
+
+    // 增益 & 分析
+    gainNode=audioCtx.createGain();
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=2048;
+
+    // 連接：source -> lowpass -> bandpass -> modNode
+    // 然後分兩路：modNode -> analyser（給示波器，永不靜音）；modNode -> gain -> destination（可靜音）
+    source.connect(lowpass);
+    lowpass.connect(bandpass);
+    bandpass.connect(modNode);
+    modNode.connect(analyser);
+    modNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    setupOscilloscope();
+    drawOscilloscope();
+    updateFilters();
+    updateStatus('麥克風啟用中...');
+  }catch(err){
+    console.error(err);
+    const box=document.getElementById('errorBox');
+    box.style.display='block';
+    box.textContent='麥克風啟用失敗: '+err.message;
+  }
+}
+
+function stopMic(){
+  if(micStream)micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx)audioCtx.close();
+  updateStatus('已停止');
+}
+
+function applyBandpassParams(){
+  if(!bandpass||!audioCtx) return;
+  // 自動排序 low/high
+  const lo=Math.max(0, Math.min(lowFreq, highFreq));
+  const hi=Math.min(20, Math.max(lowFreq, highFreq));
+  const center=(lo+hi)/2 || 0.1;
+  const bw=Math.max(hi-lo, 0.1);
+  const Q=Math.max(center/bw, 0.0001);
+  bandpass.frequency.setTargetAtTime(center, audioCtx.currentTime, 0.01);
+  bandpass.Q.setTargetAtTime(Q, audioCtx.currentTime, 0.01);
+}
+
+function applyLowpass(){
+  if(!lowpass||!audioCtx) return;
+  const cutoff=Math.min(Math.max(highFreq,0),20); // 由高端滑桿控制，不超過20Hz
+  lowpass.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.01);
+}
+
+function applyGainOrMute(){
+  if(!gainNode||!audioCtx) return;
+  // 低端==高端 -> 靜音（但示波器仍顯示，因為在增益之前分支已送到 analyser）
+  if(Math.abs(highFreq - lowFreq) < EPS){
+    gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+  }else{
+    const gainLinear=Math.pow(10, (gainDB||0)/20);
+    gainNode.gain.setTargetAtTime(gainLinear, audioCtx.currentTime, 0.01);
+  }
+}
+
+function updateFilters(){
+  applyLowpass();
+  applyBandpassParams();
+  applyGainOrMute();
+}
+
+['low','high','mult','gain','pitch'].forEach(name=>{
+  const s=document.getElementById(name+'Slider');
+  const v=document.getElementById(name+'Val');
+  s.addEventListener('input',()=>{
+    const val=parseFloat(s.value);
+    if(name==='low') lowFreq=val;
+    else if(name==='high') highFreq=val;
+    else if(name==='mult') multiplier=val; // 即時生效，modNode 會讀取 global multiplier
+    else if(name==='gain') gainDB=val;
+    else if(name==='pitch') pitch=val; // 目前保留，尚未作用於搬移；請告知預期用途
+    v.textContent=val.toFixed(name==='mult'?0:(name==='pitch'?2:1));
+    updateFilters();
+  });
+});
+
+document.getElementById('startMic').onclick=startMic;
+document.getElementById('stopMic').onclick=stopMic;
+</script>
+</body>
+</html>
