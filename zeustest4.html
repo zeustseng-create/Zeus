@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>打字觸發 10 Hz 次音波</title>
+  <style>
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; padding: 24px; background:#f7fafc; color:#0f172a; }
+    .card { background:white; border-radius:12px; box-shadow:0 6px 18px rgba(15,23,42,0.08); padding:18px; max-width:760px; margin:16px auto; }
+    h1{ font-size:20px; margin:0 0 8px }
+    p{ margin:8px 0 }
+    .controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px }
+    button{ padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; cursor:pointer }
+    button.primary{ background:#0ea5a4; color:white; border:none }
+    .status{ font-size:13px; color:#475569 }
+    textarea{ width:100%; height:160px; margin-top:12px; padding:10px; border-radius:8px; border:1px solid #e2e8f0; resize:vertical }
+    small.warn{ color:#b91c1c }
+    .slider-container { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .slider-container label { font-size:14px; color:#475569; }
+    #modeStatus { font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>打字時發出 10 Hz 次音波（實際播放）</h1>
+    <p>說明：此頁面會在你按鍵時播放 <strong>10 Hz</strong> 的低頻正弦波（次音波）。
+      由於人耳通常聽不到低於 20 Hz 的聲音，而且多數喇叭無法有效重現 10 Hz，播放效果可能是震動或根本無聲。</p>
+    <p class="status">狀態：<span id="ctxState">AudioContext 尚未啟動</span></p>
+
+    <div class="controls">
+      <button id="btnEnable" class="primary">啟動音訊（需要使用者互動）</button>
+      <button id="btnToggleVisual">切換視覺反饋</button>
+      <button id="btnToggleMode">切換模式（目前：安全）</button>
+    </div>
+
+    <div class="slider-container">
+      <label for="volume">音量（dB）：</label>
+      <input id="volume" type="range" min="-40" max="60" step="1" value="-26" />
+      <span id="volValue">-26 dB</span>
+    </div>
+
+    <p id="modeStatus" style="color:#0f766e">🔒 目前為安全模式</p>
+    <p id="modeWarning" style="color:#b91c1c; display:none;">⚠️ 真實模式可能造成失真或損壞喇叭，請謹慎使用！</p>
+
+    <p><small class="warn">注意：請勿在音量過大或靠近敏感設備時長時間播放。某些小型喇叭或耳機無法發出此頻率，播放可能導致失真或硬體異常。你自行承擔使用風險。</small></p>
+
+    <textarea id="text" placeholder="在此輸入文字，按鍵時會發出 10 Hz 次音波（請先按『啟動音訊』）"></textarea>
+
+    <p style="margin-top:12px">參數：頻率 = <strong>10 Hz</strong>；每次按鍵持續時間 = <strong>150 ms</strong>（可修改）；波形 = 正弦波。</p>
+  </div>
+
+  <script>
+    let audioCtx = null;
+    const freq = 10;
+    const keyDuration = 0.15;
+    let safeMode = true;
+
+    const btnEnable = document.getElementById('btnEnable');
+    const btnToggleVisual = document.getElementById('btnToggleVisual');
+    const btnToggleMode = document.getElementById('btnToggleMode');
+    const ctxStateSpan = document.getElementById('ctxState');
+    const volumeSlider = document.getElementById('volume');
+    const volValue = document.getElementById('volValue');
+    const textarea = document.getElementById('text');
+    const modeStatus = document.getElementById('modeStatus');
+    const modeWarning = document.getElementById('modeWarning');
+
+    let visualOn = true;
+
+    btnEnable.addEventListener('click', async () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      ctxStateSpan.textContent = 'AudioContext 已啟動（' + audioCtx.state + '）';
+      btnEnable.disabled = true;
+    });
+
+    btnToggleVisual.addEventListener('click', () => {
+      visualOn = !visualOn;
+      btnToggleVisual.textContent = visualOn ? '切換視覺反饋' : '切換視覺反饋 (關)';
+    });
+
+    btnToggleMode.addEventListener('click', () => {
+      safeMode = !safeMode;
+      if (safeMode) {
+        btnToggleMode.textContent = '切換模式（目前：安全）';
+        modeStatus.textContent = '🔒 目前為安全模式';
+        modeStatus.style.color = '#0f766e';
+        modeWarning.style.display = 'none';
+      } else {
+        btnToggleMode.textContent = '切換模式（目前：真實）';
+        modeStatus.textContent = '⚡ 目前為真實模式';
+        modeStatus.style.color = '#b91c1c';
+        modeWarning.style.display = 'block';
+      }
+    });
+
+    volumeSlider.addEventListener('input', () => {
+      volValue.textContent = volumeSlider.value + ' dB';
+    });
+
+    function dbToGain(db, safe) {
+      let gainValue = Math.pow(10, db / 20);
+      if (safe && gainValue > 1) gainValue = 1; // 限制最大增益
+      if (gainValue < 0.0001) gainValue = 0.0001; // 避免無限小
+      return gainValue;
+    }
+
+    function play10HzOnce() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+
+      const gain = audioCtx.createGain();
+      const gainValue = dbToGain(parseFloat(volumeSlider.value), safeMode);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(gainValue, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + keyDuration);
+
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + keyDuration + 0.02);
+
+      if (visualOn) flashTextarea(keyDuration * 1000);
+    }
+
+    function flashTextarea(ms) {
+      const original = textarea.style.boxShadow;
+      textarea.style.boxShadow = '0 0 0 6px rgba(14,165,164,0.12)';
+      setTimeout(() => { textarea.style.boxShadow = original; }, ms);
+    }
+
+    let keysDown = new Set();
+    window.addEventListener('keydown', (e) => {
+      if (!audioCtx) return;
+      const k = e.code || e.key;
+      if (keysDown.has(k)) return;
+      keysDown.add(k);
+      play10HzOnce();
+    });
+    window.addEventListener('keyup', (e) => {
+      const k = e.code || e.key;
+      keysDown.delete(k);
+    });
+
+    textarea.addEventListener('input', () => {
+      if (!audioCtx) return;
+      play10HzOnce();
+    });
+
+    function userGestureInit() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      ctxStateSpan.textContent = 'AudioContext 已啟動（' + audioCtx.state + '）';
+      btnEnable.disabled = true;
+      window.removeEventListener('keydown', userGestureInit);
+      window.removeEventListener('pointerdown', userGestureInit);
+    }
+    window.addEventListener('pointerdown', userGestureInit);
+    window.addEventListener('keydown', userGestureInit);
+  </script>
+</body>
+</html>
