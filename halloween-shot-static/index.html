@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>萬聖節射擊小遊戲</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>🎃 萬聖節射擊小遊戲</h1>
+    <div id="hud">
+      <span id="score">分數: 0</span>
+      <button id="restart">重新開始</button>
+    </div>
+  </header>
+
+  <main>
+    <canvas id="game-canvas"></canvas>
+    <div id="instructions">
+      點擊任意位置發射。擊中越多分數越高，目標落到底部遊戲結束。
+    </div>
+  </main>
+
+  <footer>
+    <small>靜態原生 JS 範例 — 可直接丟到 GitHub Pages</small>
+  </footer>
+
+  <script src="game.js"></script>
+</body>
+</html>

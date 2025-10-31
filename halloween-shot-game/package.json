@@ -8,6 +8,9 @@
     "build": "vite build",
     "serve": "vite preview"
   },
+  "homepage": "./",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist",
   "keywords": [
     "halloween",
     "game",
@@ -16,10 +19,12 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "vite": "^2.0.0",
     "typescript": "^4.0.0"
   },
   "devDependencies": {
-    "ts-loader": "^8.0.0"
+    "ts-loader": "^8.0.0",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "vue": "^3.4.0"
   }
 }

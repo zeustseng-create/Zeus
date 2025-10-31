@@ -1,4 +1,4 @@
-class GameEngine {
+export class GameEngine {
     private lastTime: number;
     private gameObjects: any[];
 
