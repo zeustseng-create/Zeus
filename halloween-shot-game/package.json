@@ -1,0 +1,25 @@
+{
+  "name": "halloween-shot-game",
+  "version": "1.0.0",
+  "description": "A Halloween-themed shooting game.",
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "keywords": [
+    "halloween",
+    "game",
+    "shooting"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "vite": "^2.0.0",
+    "typescript": "^4.0.0"
+  },
+  "devDependencies": {
+    "ts-loader": "^8.0.0"
+  }
+}
