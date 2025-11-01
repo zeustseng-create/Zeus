@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萬聖節射擊大戰 🎃</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 主選單 -->
+        <div id="mainMenu" class="screen active">
+            <div class="menu-container">
+                <h1 class="game-title">🎃 萬聖節射擊大戰 🎃</h1>
+                <div class="menu-buttons">
+                    <button id="createRoomBtn" class="menu-btn">創建房間</button>
+                    <button id="joinRoomBtn" class="menu-btn">加入房間</button>
+                    <button id="settingsBtn" class="menu-btn">設定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 創建房間 -->
+        <div id="createRoomScreen" class="screen">
+            <div class="room-container">
+                <h2>創建新房間</h2>
+                <div class="form-group">
+                    <label>房間名稱:</label>
+                    <input type="text" id="roomNameInput" placeholder="輸入房間名稱" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>玩家名稱:</label>
+                    <input type="text" id="playerNameInput" placeholder="輸入你的名稱" maxlength="15">
+                </div>
+                <div class="form-group">
+                    <label>最大玩家數:</label>
+                    <select id="maxPlayersSelect">
+                        <option value="2">2 人</option>
+                        <option value="4" selected>4 人</option>
+                        <option value="6">6 人</option>
+                        <option value="8">8 人</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button id="createRoomConfirmBtn" class="action-btn">創建房間</button>
+                    <button id="backToMenuBtn" class="cancel-btn">返回</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加入房間 -->
+        <div id="joinRoomScreen" class="screen">
+            <div class="room-container">
+                <h2>加入房間</h2>
+                <div class="form-group">
+                    <label>房間 ID:</label>
+                    <input type="text" id="roomIdInput" placeholder="輸入房間 ID" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label>玩家名稱:</label>
+                    <input type="text" id="joinPlayerNameInput" placeholder="輸入你的名稱" maxlength="15">
+                </div>
+                <div class="button-group">
+                    <button id="joinRoomConfirmBtn" class="action-btn">加入房間</button>
+                    <button id="backToMenuBtn2" class="cancel-btn">返回</button>
+                </div>
+                
+                <div class="room-list">
+                    <h3>可用房間</h3>
+                    <div id="availableRooms">
+                        <div class="loading">搜尋房間中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 房間等待 -->
+        <div id="roomWaitingScreen" class="screen">
+            <div class="waiting-container">
+                <h2 id="roomTitle">房間: </h2>
+                <div class="room-info">
+                    <p>房間 ID: <span id="currentRoomId"></span></p>
+                    <p>玩家: <span id="currentPlayerCount">1</span>/<span id="maxPlayerCount">4</span></p>
+                </div>
+                
+                <div class="players-list">
+                    <h3>玩家列表</h3>
+                    <div id="playersList"></div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="readyBtn" class="action-btn">準備</button>
+                    <button id="startGameBtn" class="action-btn" disabled>開始遊戲</button>
+                    <button id="leaveRoomBtn" class="cancel-btn">離開房間</button>
+                </div>
+                
+                <div class="chat-container">
+                    <div id="chatMessages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="輸入訊息..." maxlength="100">
+                        <button id="sendChatBtn">發送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲畫面 -->
+        <div id="gameScreen" class="screen">
+            <div class="game-ui">
+                <div class="game-stats">
+                    <div class="stat">
+                        <span class="stat-label">生命值:</span>
+                        <div class="health-bar">
+                            <div id="healthBar" class="health-fill"></div>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">擊殺:</span>
+                        <span id="killCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">死亡:</span>
+                        <span id="deathCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">時間:</span>
+                        <span id="gameTimer">0:00</span>
+                    </div>
+                </div>
+                
+                <div class="leaderboard">
+                    <h4>排行榜</h4>
+                    <div id="leaderboardList"></div>
+                </div>
+            </div>
+            
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div class="game-controls">
+                <p>控制: WASD 移動, 滑鼠瞄準射擊, R 重新裝彈</p>
+                <button id="exitGameBtn" class="cancel-btn">離開遊戲</button>
+            </div>
+        </div>
+
+        <!-- 遊戲結束 -->
+        <div id="gameOverScreen" class="screen">
+            <div class="game-over-container">
+                <h2>遊戲結束!</h2>
+                <div id="finalResults"></div>
+                <div class="button-group">
+                    <button id="playAgainBtn" class="action-btn">再玩一次</button>
+                    <button id="backToMenuBtn3" class="cancel-btn">回到主選單</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

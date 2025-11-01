@@ -1,0 +1,467 @@
+/* 萬聖節主題樣式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a0033, #330066, #4d0080);
+    color: #fff;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 萬聖節背景動畫 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #ff6600, transparent),
+        radial-gradient(2px 2px at 40px 70px, #ff9900, transparent),
+        radial-gradient(1px 1px at 90px 40px, #ffcc00, transparent),
+        radial-gradient(1px 1px at 130px 80px, #ff6600, transparent);
+    background-repeat: repeat;
+    background-size: 200px 100px;
+    animation: sparkle 3s linear infinite;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* 主選單樣式 */
+.menu-container {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 40px;
+    border-radius: 20px;
+    border: 3px solid #ff6600;
+    box-shadow: 0 0 30px rgba(255, 102, 0, 0.5);
+}
+
+.game-title {
+    font-size: 3em;
+    margin-bottom: 30px;
+    text-shadow: 0 0 20px #ff6600;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 20px #ff6600; }
+    to { text-shadow: 0 0 30px #ff6600, 0 0 40px #ff9900; }
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.menu-btn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    background: linear-gradient(45deg, #ff6600, #ff9900);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.menu-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(255, 102, 0, 0.4);
+    background: linear-gradient(45deg, #ff9900, #ffcc00);
+}
+
+/* 房間設定樣式 */
+.room-container {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid #ff6600;
+    min-width: 400px;
+    max-width: 600px;
+}
+
+.room-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #ff9900;
+    text-shadow: 0 0 10px #ff6600;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ffcc00;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ff6600;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1em;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #ff9900;
+    box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.action-btn {
+    padding: 12px 25px;
+    background: linear-gradient(45deg, #00cc66, #00ff80);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 204, 102, 0.4);
+}
+
+.action-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+.cancel-btn {
+    padding: 12px 25px;
+    background: linear-gradient(45deg, #cc0066, #ff0080);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(204, 0, 102, 0.4);
+}
+
+/* 房間列表 */
+.room-list {
+    margin-top: 30px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.room-list h3 {
+    color: #ffcc00;
+    margin-bottom: 15px;
+}
+
+.room-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ff6600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.room-item:hover {
+    background: rgba(255, 102, 0, 0.2);
+    transform: translateX(5px);
+}
+
+.loading {
+    text-align: center;
+    color: #ffcc00;
+    font-style: italic;
+}
+
+/* 等待房間樣式 */
+.waiting-container {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid #ff6600;
+    min-width: 500px;
+    max-width: 700px;
+}
+
+.room-info {
+    background: rgba(255, 102, 0, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.players-list {
+    margin-bottom: 20px;
+}
+
+.players-list h3 {
+    color: #ffcc00;
+    margin-bottom: 10px;
+}
+
+.player-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.player-ready {
+    color: #00ff80;
+    font-weight: bold;
+}
+
+.player-waiting {
+    color: #ffcc00;
+}
+
+/* 聊天系統 */
+.chat-container {
+    margin-top: 20px;
+    border-top: 1px solid #ff6600;
+    padding-top: 15px;
+}
+
+#chatMessages {
+    height: 100px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.chat-input {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ff6600;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.chat-input button {
+    padding: 8px 15px;
+    background: #ff6600;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* 遊戲畫面樣式 */
+#gameScreen {
+    flex-direction: column;
+    padding: 20px;
+}
+
+.game-ui {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.game-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-label {
+    color: #ffcc00;
+    font-weight: bold;
+}
+
+.health-bar {
+    width: 100px;
+    height: 20px;
+    background: rgba(255, 0, 0, 0.3);
+    border: 2px solid #ff0000;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff0000, #ff6600, #00ff00);
+    width: 100%;
+    transition: width 0.3s ease;
+}
+
+.leaderboard {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #ff6600;
+    min-width: 200px;
+}
+
+.leaderboard h4 {
+    color: #ffcc00;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#gameCanvas {
+    border: 3px solid #ff6600;
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 0 20px rgba(255, 102, 0, 0.3);
+}
+
+.game-controls {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.game-controls p {
+    color: #ffcc00;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+/* 遊戲結束畫面 */
+.game-over-container {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 40px;
+    border-radius: 20px;
+    border: 3px solid #ff6600;
+    text-align: center;
+    min-width: 400px;
+}
+
+.game-over-container h2 {
+    color: #ff9900;
+    margin-bottom: 25px;
+    font-size: 2.5em;
+    text-shadow: 0 0 15px #ff6600;
+}
+
+#finalResults {
+    background: rgba(255, 102, 0, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 2em;
+    }
+    
+    .menu-container,
+    .room-container,
+    .waiting-container {
+        margin: 20px;
+        padding: 20px;
+        min-width: auto;
+    }
+    
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+    }
+    
+    .game-ui {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .game-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+/* 滾動條樣式 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ff6600;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ff9900;
+}
