@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: multiplayer-game
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          type: web
+          name: multiplayer-game
+          property: port
