@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>怡閣大球吃小球 - 多人競技遊戲</title>
+    <meta name="description" content="一個有趣的大球吃小球競技遊戲，具有智能AI敵人和顏色威脅系統">
+    <meta name="keywords" content="遊戲,大球吃小球,多人,競技,HTML5,Canvas">
+    <meta name="author" content="怡閣開發團隊">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- 名字輸入界面 -->
+        <div id="nameInputScreen" class="name-input-screen">
+            <div class="name-input-container">
+                <h1>🎮 怡閣大球吃小球</h1>
+                <h2>多人線上競技</h2>
+                <div class="input-group">
+                    <label for="playerName">輸入你的名字：</label>
+                    <input type="text" id="playerName" maxlength="12" placeholder="請輸入名字..." autocomplete="off">
+                </div>
+                <button id="joinGameBtn" disabled>加入遊戲</button>
+                <div class="game-info-preview">
+                    <p>🎯 遊戲規則：</p>
+                    <ul>
+                        <li>使用方向鍵或 WASD 移動</li>
+                        <li>吃掉比你小的球來成長</li>
+                        <li>避開比你大的球</li>
+                        <li>與其他玩家即時競技</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲界面 -->
+        <div id="gameScreen" class="game-screen" style="display: none;">
+            <header>
+                <h1>大球吃小球 - 多人模式</h1>
+                <div class="game-info">
+                    <div class="score">分數: <span id="score">0</span></div>
+                    <div class="size">大小: <span id="size">20</span></div>
+                    <div class="players">玩家: <span id="playerCount">1</span></div>
+                    <div class="connection-status" id="connectionStatus">🟢 已連線</div>
+                </div>
+            </header>
+            
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="controls">
+                <div class="key-hints">
+                    <span>↑↓←→ 或 WASD 移動</span>
+                </div>
+                <div class="color-guide">
+                    <span style="color: #44ff44;">●</span> 綠色：可以吃掉
+                    <span style="color: #ffffff;">●</span> 白色：大小相近
+                    <span style="color: #ff4444;">●</span> 紅色：危險！會吃掉你
+                </div>
+            </div>
+        </div>
+
+        <!-- 死亡重生界面 -->
+        <div id="deathScreen" class="death-screen" style="display: none;">
+            <div class="death-container">
+                <h2>💀 遊戲結束</h2>
+                <div id="deathInfo">
+                    <p>最終分數: <span id="finalScore">0</span></p>
+                    <p>被擊敗者: <span id="killedBy">AI</span></p>
+                </div>
+                <button id="respawnBtn">重新開始</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/multiplayer-game.js"></script>
+</body>
+</html>
