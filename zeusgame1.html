@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>貪食蛇遊戲 + 真實廣告</title>
+<title>貪食蛇遊戲 + 廣告</title>
 <style>
   body {
     display: flex;
@@ -22,8 +22,8 @@
     background-color: #fff;
   }
   #ad-banner {
-    width: 160px; /* 對應你的廣告寬度 */
-    height: 600px; /* 對應你的廣告高度 */
+    width: 160px; /* 對應廣告代碼 */
+    height: 600px; /* 對應廣告代碼 */
     margin-left: 20px;
     display: flex;
     justify-content: center;
@@ -36,7 +36,7 @@
 <div id="game-container">
   <canvas id="game-board" width="400" height="400"></canvas>
   <div id="ad-banner">
-    <!-- 真實廣告代碼放這裡 -->
+    <!-- 真實廣告代碼 -->
     <script type="text/javascript">
       atOptions = {
         'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
@@ -56,7 +56,9 @@ const ctx = canvas.getContext('2d');
 
 const box = 20;
 const canvasSize = 400;
-let snake = [{x: box*5, y: box*5}];
+
+// 初始蛇長度 5，蛇頭固定
+let snake = Array(5).fill({x: box*5, y: box*5});
 let direction = 'RIGHT';
 let food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
             y: Math.floor(Math.random() * (canvasSize/box)) * box};
@@ -75,6 +77,7 @@ function draw() {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, canvasSize, canvasSize);
 
+  // 畫蛇
   for(let i=0; i<snake.length; i++) {
     ctx.fillStyle = (i === 0) ? 'green' : 'lightgreen';
     ctx.fillRect(snake[i].x, snake[i].y, box, box);
@@ -82,34 +85,43 @@ function draw() {
     ctx.strokeRect(snake[i].x, snake[i].y, box, box);
   }
 
+  // 畫食物
   ctx.fillStyle = 'red';
   ctx.fillRect(food.x, food.y, box, box);
 
-  let snakeX = snake[0].x;
-  let snakeY = snake[0].y;
+  // 計算蛇頭新位置
+  let headX = snake[0].x;
+  let headY = snake[0].y;
 
-  if(direction === 'LEFT') snakeX -= box;
-  if(direction === 'RIGHT') snakeX += box;
-  if(direction === 'UP') snakeY -= box;
-  if(direction === 'DOWN') snakeY += box;
+  if(direction === 'LEFT') headX -= box;
+  if(direction === 'RIGHT') headX += box;
+  if(direction === 'UP') headY -= box;
+  if(direction === 'DOWN') headY += box;
 
-  if(snakeX === food.x && snakeY === food.y) {
-    score++;
-    food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
-            y: Math.floor(Math.random() * (canvasSize/box)) * box};
-  } else {
-    snake.pop();
-  }
-
-  let newHead = {x: snakeX, y: snakeY};
-
-  if(snakeX < 0 || snakeY < 0 || snakeX >= canvasSize || snakeY >= canvasSize || collision(newHead, snake)) {
+  // 遊戲結束條件
+  if(headX < 0 || headY < 0 || headX >= canvasSize || headY >= canvasSize || collision({x: headX, y: headY}, snake)) {
     clearInterval(game);
     alert('遊戲結束! 分數: ' + score);
     return;
   }
 
-  snake.unshift(newHead);
+  // 吃食物時往尾巴增加方塊
+  let ateFood = (headX === food.x && headY === food.y);
+  if(ateFood) {
+    score++;
+    food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
+            y: Math.floor(Math.random() * (canvasSize/box)) * box};
+    // 在尾巴增加一個方塊
+    snake.push({...snake[snake.length-1]});
+  }
+
+  // 移動蛇（頭位置更新，尾巴跟隨）
+  for(let i=snake.length-1; i>0; i--) {
+    snake[i].x = snake[i-1].x;
+    snake[i].y = snake[i-1].y;
+  }
+  snake[0].x = headX;
+  snake[0].y = headY;
 }
 
 function collision(head, array) {
