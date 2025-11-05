@@ -3,50 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>貪食蛇遊戲 + 廣告</title>
+<title>貪食蛇遊戲 + 廣告 + 方向按鈕</title>
 <style>
   body {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     margin: 0;
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
+    padding-top: 20px;
   }
+
+  #top-banner {
+    width: 728px;
+    height: 90px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   #game-container {
     display: flex;
-    margin-top: 50px;
   }
+
   #game-board {
     border: 2px solid #333;
     background-color: #fff;
   }
+
   #ad-banner {
-    width: 160px; /* 對應廣告代碼 */
-    height: 600px; /* 對應廣告代碼 */
+    width: 160px;
+    height: 600px;
     margin-left: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
   }
+
+  #controls-container {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+  }
+
+  #direction-controls {
+    margin-top: 10px;
+    display: none;
+  }
+
+  .direction-btn {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 3px;
+    transition: 0.3s;
+  }
+
+  .direction-btn:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+  }
+
+  label {
+    font-size: 16px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
-<div id="game-container">
-  <canvas id="game-board" width="400" height="400"></canvas>
-  <div id="ad-banner">
-    <!-- 真實廣告代碼 -->
-    <script type="text/javascript">
-      atOptions = {
-        'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
-        'format' : 'iframe',
-        'height' : 600,
-        'width' : 160,
-        'params' : {}
-      };
-    </script>
-    <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
+
+<!-- 頂部橫幅廣告 -->
+<div id="top-banner">
+  <script type="text/javascript">
+    atOptions = {
+      'key' : 'd0166b129399f5249594c611abbdd565',
+      'format' : 'iframe',
+      'height' : 90,
+      'width' : 728,
+      'params' : {}
+    };
+  </script>
+  <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+</div>
+
+<div>
+  <div id="game-container">
+    <canvas id="game-board" width="400" height="400"></canvas>
+    <div id="ad-banner">
+      <!-- 右側長型廣告 -->
+      <script type="text/javascript">
+        atOptions = {
+          'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
+          'format' : 'iframe',
+          'height' : 600,
+          'width' : 160,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
+    </div>
+  </div>
+
+  <div id="controls-container">
+    <label>
+      <input type="checkbox" id="show-buttons"> 顯示方向按鈕
+    </label>
+    <div id="direction-controls">
+      <button class="direction-btn" onclick="changeDirectionByButton('UP')">↑ 上</button><br>
+      <button class="direction-btn" onclick="changeDirectionByButton('LEFT')">← 左</button>
+      <button class="direction-btn" onclick="changeDirectionByButton('DOWN')">↓ 下</button>
+      <button class="direction-btn" onclick="changeDirectionByButton('RIGHT')">→ 右</button>
+    </div>
   </div>
 </div>
 
@@ -57,37 +132,50 @@ const ctx = canvas.getContext('2d');
 const box = 20;
 const canvasSize = 400;
 
-// 初始蛇長度 5，蛇頭固定
 let snake = Array(5).fill({x: box*5, y: box*5});
 let direction = 'RIGHT';
 let food = generateFood();
 let score = 0;
 
-document.addEventListener('keydown', changeDirection);
+// 勾選框控制顯示按鈕
+const checkbox = document.getElementById('show-buttons');
+const controls = document.getElementById('direction-controls');
+checkbox.addEventListener('change', function() {
+  controls.style.display = this.checked ? 'block' : 'none';
+});
 
-function changeDirection(event) {
-  if(event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-  if(event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-  if(event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-  if(event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+// 改變方向函式（按鈕）
+function changeDirectionByButton(dir) {
+  if(dir === 'UP' && direction !== 'DOWN') direction = 'UP';
+  if(dir === 'DOWN' && direction !== 'UP') direction = 'DOWN';
+  if(dir === 'LEFT' && direction !== 'RIGHT') direction = 'LEFT';
+  if(dir === 'RIGHT' && direction !== 'LEFT') direction = 'RIGHT';
 }
 
-// 生成不在邊緣或角落的食物
+// 生成食物不靠邊
 function generateFood() {
-  let min = 1; // 邊距 1 格
-  let max = canvasSize / box - 2; // 避免邊界
+  let min = 1;
+  let max = canvasSize / box - 2;
   return {
     x: Math.floor(Math.random() * (max - min + 1) + min) * box,
     y: Math.floor(Math.random() * (max - min + 1) + min) * box
   };
 }
 
+// 鍵盤控制方向
+document.addEventListener('keydown', function(event){
+  if(event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+  if(event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+  if(event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+  if(event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+});
+
 function draw() {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, canvasSize, canvasSize);
 
   // 畫蛇
-  for(let i=0; i<snake.length; i++) {
+  for(let i=0; i<snake.length; i++){
     ctx.fillStyle = (i === 0) ? 'green' : 'lightgreen';
     ctx.fillRect(snake[i].x, snake[i].y, box, box);
     ctx.strokeStyle = '#333';
@@ -107,23 +195,23 @@ function draw() {
   if(direction === 'UP') headY -= box;
   if(direction === 'DOWN') headY += box;
 
-  // 遊戲結束條件
-  if(headX < 0 || headY < 0 || headX >= canvasSize || headY >= canvasSize || collision({x: headX, y: headY}, snake)) {
+  // 遊戲結束
+  if(headX < 0 || headY < 0 || headX >= canvasSize || headY >= canvasSize || collision({x: headX, y: headY}, snake)){
     clearInterval(game);
     alert('遊戲結束! 分數: ' + score);
     return;
   }
 
-  // 吃食物時往尾巴增加方塊
+  // 吃食物往尾巴長
   let ateFood = (headX === food.x && headY === food.y);
-  if(ateFood) {
+  if(ateFood){
     score++;
-    food = generateFood(); // 重新生成不在邊緣的食物
+    food = generateFood();
     snake.push({...snake[snake.length-1]});
   }
 
   // 移動蛇（頭位置更新，尾巴跟隨）
-  for(let i=snake.length-1; i>0; i--) {
+  for(let i=snake.length-1; i>0; i--){
     snake[i].x = snake[i-1].x;
     snake[i].y = snake[i-1].y;
   }
@@ -131,8 +219,8 @@ function draw() {
   snake[0].y = headY;
 }
 
-function collision(head, array) {
-  for(let i=0; i<array.length; i++) {
+function collision(head, array){
+  for(let i=0; i<array.length; i++){
     if(head.x === array[i].x && head.y === array[i].y) return true;
   }
   return false;
