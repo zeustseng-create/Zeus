@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貪食蛇遊戲 + Adsterra廣告</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+  }
+  #game-container {
+    display: flex;
+    margin-top: 50px;
+  }
+  #game-board {
+    border: 2px solid #333;
+    background-color: #fff;
+  }
+  #ad-banner {
+    width: 300px; /* Adsterra 建議尺寸 */
+    height: 250px;
+    margin-left: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game-board" width="400" height="400"></canvas>
+  <div id="ad-banner">
+    <!-- Adsterra 廣告代碼 -->
+    <script type="text/javascript" src="https://ad.adsterra.com/your-ad-code.js"></script>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game-board');
+const ctx = canvas.getContext('2d');
+
+const box = 20;
+const canvasSize = 400;
+let snake = [{x: box*5, y: box*5}];
+let direction = 'RIGHT';
+let food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
+            y: Math.floor(Math.random() * (canvasSize/box)) * box};
+let score = 0;
+
+document.addEventListener('keydown', changeDirection);
+
+function changeDirection(event) {
+  if(event.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+  if(event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+  if(event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+  if(event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+}
+
+function draw() {
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+  for(let i=0; i<snake.length; i++) {
+    ctx.fillStyle = (i === 0) ? 'green' : 'lightgreen';
+    ctx.fillRect(snake[i].x, snake[i].y, box, box);
+    ctx.strokeStyle = '#333';
+    ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+  }
+
+  ctx.fillStyle = 'red';
+  ctx.fillRect(food.x, food.y, box, box);
+
+  let snakeX = snake[0].x;
+  let snakeY = snake[0].y;
+
+  if(direction === 'LEFT') snakeX -= box;
+  if(direction === 'RIGHT') snakeX += box;
+  if(direction === 'UP') snakeY -= box;
+  if(direction === 'DOWN') snakeY += box;
+
+  if(snakeX === food.x && snakeY === food.y) {
+    score++;
+    food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
+            y: Math.floor(Math.random() * (canvasSize/box)) * box};
+  } else {
+    snake.pop();
+  }
+
+  let newHead = {x: snakeX, y: snakeY};
+
+  if(snakeX < 0 || snakeY < 0 || snakeX >= canvasSize || snakeY >= canvasSize || collision(newHead, snake)) {
+    clearInterval(game);
+    alert('遊戲結束! 分數: ' + score);
+    return;
+  }
+
+  snake.unshift(newHead);
+}
+
+function collision(head, array) {
+  for(let i=0; i<array.length; i++) {
+    if(head.x === array[i].x && head.y === array[i].y) return true;
+  }
+  return false;
+}
+
+const game = setInterval(draw, 100);
+</script>
+</body>
+</html>
