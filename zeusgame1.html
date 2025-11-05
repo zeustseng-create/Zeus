@@ -51,7 +51,7 @@
 
   #direction-controls {
     margin-top: 10px;
-    display: block; /* 預設顯示 */
+    display: block;
   }
 
   .direction-btn {
@@ -70,6 +70,10 @@
   .direction-btn:hover {
     background-color: #45a049;
     transform: scale(1.05);
+  }
+
+  #gameover-ad {
+    margin-top: 20px;
   }
 </style>
 </head>
@@ -115,6 +119,9 @@
       <button class="direction-btn" onclick="changeDirectionByButton('RIGHT')">→ 右</button>
     </div>
   </div>
+
+  <!-- 輸了才出現的廣告容器 -->
+  <div id="gameover-ad"></div>
 </div>
 
 <script>
@@ -128,6 +135,7 @@ let snake = Array(5).fill({x: box*5, y: box*5});
 let direction = 'RIGHT';
 let food = generateFood();
 let score = 0;
+let game;
 
 // 改變方向函式（按鈕）
 function changeDirectionByButton(dir) {
@@ -184,6 +192,7 @@ function draw() {
   if(headX < 0 || headY < 0 || headX >= canvasSize || headY >= canvasSize || collision({x: headX, y: headY}, snake)){
     clearInterval(game);
     alert('遊戲結束! 分數: ' + score);
+    showGameOverAd(); // 顯示輸了的廣告
     return;
   }
 
@@ -211,7 +220,16 @@ function collision(head, array){
   return false;
 }
 
-const game = setInterval(draw, 100);
+// 顯示遊戲結束廣告
+function showGameOverAd(){
+  const adContainer = document.getElementById('gameover-ad');
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = '//pl27993842.effectivegatecpm.com/d6/59/2d/d6592d07f3b3af57dbf49cbcf2a1dd57.js';
+  adContainer.appendChild(script);
+}
+
+game = setInterval(draw, 100);
 </script>
 </body>
 </html>
