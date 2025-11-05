@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>貪食蛇遊戲 + Adsterra廣告</title>
+<title>貪食蛇遊戲 + 真實廣告</title>
 <style>
   body {
     display: flex;
@@ -22,8 +22,8 @@
     background-color: #fff;
   }
   #ad-banner {
-    width: 300px; /* Adsterra 建議尺寸 */
-    height: 250px;
+    width: 160px; /* 對應你的廣告寬度 */
+    height: 600px; /* 對應你的廣告高度 */
     margin-left: 20px;
     display: flex;
     justify-content: center;
@@ -36,8 +36,17 @@
 <div id="game-container">
   <canvas id="game-board" width="400" height="400"></canvas>
   <div id="ad-banner">
-    <!-- Adsterra 廣告代碼 -->
-    <script type="text/javascript" src="https://ad.adsterra.com/your-ad-code.js"></script>
+    <!-- 真實廣告代碼放這裡 -->
+    <script type="text/javascript">
+      atOptions = {
+        'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
+        'format' : 'iframe',
+        'height' : 600,
+        'width' : 160,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
   </div>
 </div>
 
