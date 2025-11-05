@@ -60,8 +60,7 @@ const canvasSize = 400;
 // 初始蛇長度 5，蛇頭固定
 let snake = Array(5).fill({x: box*5, y: box*5});
 let direction = 'RIGHT';
-let food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
-            y: Math.floor(Math.random() * (canvasSize/box)) * box};
+let food = generateFood();
 let score = 0;
 
 document.addEventListener('keydown', changeDirection);
@@ -71,6 +70,16 @@ function changeDirection(event) {
   if(event.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
   if(event.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
   if(event.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+}
+
+// 生成不在邊緣或角落的食物
+function generateFood() {
+  let min = 1; // 邊距 1 格
+  let max = canvasSize / box - 2; // 避免邊界
+  return {
+    x: Math.floor(Math.random() * (max - min + 1) + min) * box,
+    y: Math.floor(Math.random() * (max - min + 1) + min) * box
+  };
 }
 
 function draw() {
@@ -109,9 +118,7 @@ function draw() {
   let ateFood = (headX === food.x && headY === food.y);
   if(ateFood) {
     score++;
-    food = {x: Math.floor(Math.random() * (canvasSize/box)) * box,
-            y: Math.floor(Math.random() * (canvasSize/box)) * box};
-    // 在尾巴增加一個方塊
+    food = generateFood(); // 重新生成不在邊緣的食物
     snake.push({...snake[snake.length-1]});
   }
 
