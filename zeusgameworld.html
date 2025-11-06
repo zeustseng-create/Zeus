@@ -3,56 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>跳轉到我的網站</title>
+<title>我的遊戲網站選單</title>
 <style>
   body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(to right, #74ebd5, #ACB6E5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  #container {
+    background-color: #f0f4f8;
+    font-family: "Microsoft JhengHei", sans-serif;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.85);
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    padding: 50px;
   }
-
   h1 {
-    margin-bottom: 30px;
     color: #333;
+    margin-bottom: 40px;
   }
-
-  .btn {
-    display: inline-block;
+  .game-button {
+    display: block;
+    width: 300px;
+    margin: 15px auto;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
     background-color: #4CAF50;
     color: white;
-    padding: 15px 30px;
-    font-size: 18px;
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    text-decoration: none;
     transition: 0.3s;
-    margin: 10px;
   }
-
-  .btn:hover {
+  .game-button:hover {
     background-color: #45a049;
     transform: scale(1.05);
+  }
+  #ad-container {
+    margin-top: 40px;
   }
 </style>
 </head>
 <body>
 
-<div id="container">
-  <h1>歡迎來到我的網站！</h1>
-  <a href="https://zeustseng-create.github.io/Zeus/zeusgame1.html" target="_blank" class="btn">前往貪食蛇遊戲</a>
+<h1>🎮 我的遊戲網站選單</h1>
+
+<!-- 第一個遊戲按鈕 -->
+<button class="game-button" onclick="window.open('https://zeustseng-create.github.io/Zeus/zeusgame1.html', '_blank')">
+  Zeus 貪食蛇遊戲
+</button>
+
+<!-- 第二個遊戲按鈕（新增） -->
+<button class="game-button" onclick="window.open('https://faustino-untestamental-wearifully.ngrok-free.dev/', '_blank')">
+  怡閣大球吃小球遊戲
+</button>
+
+<!-- 廣告區 -->
+<div id="ad-container">
+  <script type="text/javascript">
+    atOptions = {
+      'key' : 'd0166b129399f5249594c611abbdd565',
+      'format' : 'iframe',
+      'height' : 90,
+      'width' : 728,
+      'params' : {}
+    };
+  </script>
+  <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
 </div>
 
 </body>
