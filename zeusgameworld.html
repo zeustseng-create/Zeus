@@ -8,13 +8,23 @@
   body {
     background-color: #f0f4f8;
     font-family: "Microsoft JhengHei", sans-serif;
-    text-align: center;
-    padding: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 30px;
+    margin: 0;
   }
+
+  #main-content {
+    text-align: center;
+    width: 800px;
+  }
+
   h1 {
     color: #333;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
   }
+
   .game-button {
     display: block;
     width: 300px;
@@ -29,41 +39,73 @@
     cursor: pointer;
     transition: 0.3s;
   }
+
   .game-button:hover {
     background-color: #45a049;
     transform: scale(1.05);
   }
-  #ad-container {
-    margin-top: 40px;
+
+  .ad-container {
+    margin: 25px 0;
+  }
+
+  #side-ad {
+    margin-left: 40px;
+    width: 160px;
+    min-height: 600px;
+    display: flex;
+    justify-content: center;
   }
 </style>
 </head>
 <body>
 
-<h1>🎮 我的遊戲網站選單</h1>
+<div id="main-content">
 
-<!-- 第一個遊戲按鈕 -->
-<button class="game-button" onclick="window.open('https://zeustseng-create.github.io/Zeus/zeusgame1.html', '_blank')">
-  Zeus 貪食蛇遊戲
-</button>
+  <!-- 上方橫幅廣告 -->
+  <div class="ad-container">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : 'd0166b129399f5249594c611abbdd565',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+  </div>
 
-<!-- 第二個遊戲按鈕（新增） -->
-<button class="game-button" onclick="window.open('https://faustino-untestamental-wearifully.ngrok-free.dev/', '_blank')">
-  怡閣大球吃小球遊戲
-</button>
+  <h1>🎮 我的遊戲網站選單</h1>
 
-<!-- 廣告區 -->
-<div id="ad-container">
-  <script type="text/javascript">
-    atOptions = {
-      'key' : 'd0166b129399f5249594c611abbdd565',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };
-  </script>
-  <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+  <!-- 遊戲按鈕 -->
+  <button class="game-button" onclick="window.open('https://zeustseng-create.github.io/Zeus/zeusgame1.html', '_blank')">
+    Zeus 貪食蛇遊戲
+  </button>
+
+  <button class="game-button" onclick="window.open('https://faustino-untestamental-wearifully.ngrok-free.dev/', '_blank')">
+    怡閣大球吃小球遊戲
+  </button>
+
+  <!-- 下方橫幅廣告 -->
+  <div class="ad-container">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : 'd0166b129399f5249594c611abbdd565',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+  </div>
+
+</div>
+
+<!-- 側邊廣告 -->
+<div id="side-ad">
+  <script type='text/javascript' src='//pl27998139.effectivegatecpm.com/b2/6e/1e/b26e1e9543fa8cbe1050410eea25dfe4.js'></script>
 </div>
 
 </body>
