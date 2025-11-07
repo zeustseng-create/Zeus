@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>貪食蛇遊戲 + 廣告 + 方向按鈕</title>
+<title>貪食蛇遊戲 - 廣告重啟版</title>
 <style>
   body {
     display: flex;
@@ -15,46 +15,17 @@
     padding-top: 20px;
   }
 
-  #top-banner {
-    width: 728px;
-    height: 90px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #game-container {
-    display: flex;
-  }
-
   #game-board {
     border: 2px solid #333;
     background-color: #fff;
   }
 
-  #ad-banner {
-    width: 160px;
-    height: 600px;
-    margin-left: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
-
   #controls-container {
     margin-top: 20px;
     text-align: center;
-    width: 100%;
   }
 
-  #direction-controls {
-    margin-top: 10px;
-    display: block;
-  }
-
-  .direction-btn {
+  .direction-btn, #restart-btn {
     display: inline-block;
     background-color: #4CAF50;
     color: white;
@@ -63,79 +34,66 @@
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    margin: 3px;
+    margin: 5px;
     transition: 0.3s;
   }
 
-  .direction-btn:hover {
+  .direction-btn:hover, #restart-btn:hover {
     background-color: #45a049;
     transform: scale(1.05);
   }
 
-  #gameover-ad {
-    margin-top: 20px;
+  #restart-btn:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  #ad-link {
+    margin-top: 15px;
+    display: block;
+    color: #1a73e8;
+    text-decoration: underline;
+    cursor: pointer;
   }
 </style>
 </head>
 <body>
 
-<!-- 頂部橫幅廣告 -->
-<div id="top-banner">
-  <script type="text/javascript">
-    atOptions = {
-      'key' : 'd0166b129399f5249594c611abbdd565',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };
-  </script>
-  <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+<canvas id="game-board" width="400" height="400"></canvas>
+
+<div id="controls-container">
+  <button class="direction-btn" onclick="changeDirectionByButton('UP')">↑ 上</button><br>
+  <button class="direction-btn" onclick="changeDirectionByButton('LEFT')">← 左</button>
+  <button class="direction-btn" onclick="changeDirectionByButton('DOWN')">↓ 下</button>
+  <button class="direction-btn" onclick="changeDirectionByButton('RIGHT')">→ 右</button>
 </div>
 
-<div>
-  <div id="game-container">
-    <canvas id="game-board" width="400" height="400"></canvas>
-    <div id="ad-banner">
-      <!-- 右側長型廣告 -->
-      <script type="text/javascript">
-        atOptions = {
-          'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
-          'format' : 'iframe',
-          'height' : 600,
-          'width' : 160,
-          'params' : {}
-        };
-      </script>
-      <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
-    </div>
-  </div>
+<!-- 重新開始按鈕，初始為 disabled -->
+<button id="restart-btn" disabled onclick="restartGame()">重新開始</button>
 
-  <div id="controls-container">
-    <div id="direction-controls">
-      <button class="direction-btn" onclick="changeDirectionByButton('UP')">↑ 上</button><br>
-      <button class="direction-btn" onclick="changeDirectionByButton('LEFT')">← 左</button>
-      <button class="direction-btn" onclick="changeDirectionByButton('DOWN')">↓ 下</button>
-      <button class="direction-btn" onclick="changeDirectionByButton('RIGHT')">→ 右</button>
-    </div>
-  </div>
-
-  <!-- 輸了才出現的廣告容器 -->
-  <div id="gameover-ad"></div>
-</div>
+<!-- 廣告連結 -->
+<a id="ad-link" href="https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a" target="_blank" onclick="enableRestart()">點擊此廣告才能重新開始</a>
 
 <script>
 const canvas = document.getElementById('game-board');
 const ctx = canvas.getContext('2d');
-
 const box = 20;
 const canvasSize = 400;
 
-let snake = Array(5).fill({x: box*5, y: box*5});
-let direction = 'RIGHT';
-let food = generateFood();
-let score = 0;
-let game;
+let snake, direction, food, score, game;
+
+function initGame() {
+  snake = Array(5).fill({x: box*5, y: box*5});
+  direction = 'RIGHT';
+  food = generateFood();
+  score = 0;
+  if(game) clearInterval(game);
+  game = setInterval(draw, 100);
+  document.getElementById('restart-btn').disabled = true;
+}
+
+initGame();
 
 // 改變方向函式（按鈕）
 function changeDirectionByButton(dir) {
@@ -192,7 +150,7 @@ function draw() {
   if(headX < 0 || headY < 0 || headX >= canvasSize || headY >= canvasSize || collision({x: headX, y: headY}, snake)){
     clearInterval(game);
     alert('遊戲結束! 分數: ' + score);
-    showGameOverAd(); // 顯示輸了的廣告
+    // 不自動重啟，需點廣告
     return;
   }
 
@@ -220,16 +178,15 @@ function collision(head, array){
   return false;
 }
 
-// 顯示遊戲結束廣告
-function showGameOverAd(){
-  const adContainer = document.getElementById('gameover-ad');
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = '//pl27993842.effectivegatecpm.com/d6/59/2d/d6592d07f3b3af57dbf49cbcf2a1dd57.js';
-  adContainer.appendChild(script);
+// 點擊廣告後啟用重新開始
+function enableRestart() {
+  document.getElementById('restart-btn').disabled = false;
 }
 
-game = setInterval(draw, 100);
+// 重新開始遊戲
+function restartGame() {
+  initGame();
+}
 </script>
 </body>
 </html>
