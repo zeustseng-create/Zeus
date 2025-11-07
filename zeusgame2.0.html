@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄羅斯方塊</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+    }
+    
+    .top-ad {
+        margin-bottom: 20px;
+        min-height: 90px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .game-container {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+    
+    .left-ad, .right-ad {
+        min-width: 160px;
+        min-height: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .center-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .score-board {
+        display: flex;
+        gap: 40px;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    canvas {
+        border: 3px solid #333;
+        border-radius: 5px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        display: block;
+    }
+    
+    .controls {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    button {
+        padding: 15px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    button:active {
+        transform: translateY(0);
+    }
+    
+    .btn-left {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-rotate {
+        background: #2196F3;
+        color: white;
+    }
+    
+    .btn-right {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-down {
+        background: #FF9800;
+        color: white;
+        grid-column: 2;
+    }
+    
+    .game-over-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        text-align: center;
+    }
+    
+    .game-over-modal h2 {
+        color: #e74c3c;
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+    
+    .game-over-modal p {
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    
+    .btn-ad {
+        background: #e74c3c;
+        color: white;
+        padding: 15px 30px;
+        font-size: 18px;
+        margin-bottom: 15px;
+        width: 100%;
+    }
+    
+    .btn-restart {
+        background: #27ae60;
+        color: white;
+        padding: 15px 30px;
+        font-size: 18px;
+        width: 100%;
+    }
+    
+    .btn-restart:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .warning {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 10px;
+        display: none;
+    }
+    
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999;
+    }
+    
+    .bottom-ad {
+        margin-top: 20px;
+        min-height: 90px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="top-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : 'd0166b129399f5249594c611abbdd565',
+                'format' : 'iframe',
+                'height' : 90,
+                'width' : 728,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+    </div>
+
+```
+<div class="game-container">
+    <div class="left-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
+                'format' : 'iframe',
+                'height' : 600,
+                'width' : 160,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
+    </div>
+    
+    <div class="center-content">
+        <div class="score-board">
+            <div>分數: <span id="score">0</span></div>
+            <div>等級: <span id="level">1</span></div>
+        </div>
+        
+        <canvas id="tetris" width="300" height="600"></canvas>
+        
+        <div class="controls">
+            <button class="btn-left" id="btnLeft">← 左</button>
+            <button class="btn-rotate" id="btnRotate">↻ 旋轉</button>
+            <button class="btn-right" id="btnRight">右 →</button>
+            <button class="btn-down" id="btnDown">↓ 加速</button>
+        </div>
+    </div>
+    
+    <div class="right-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
+                'format' : 'iframe',
+                'height' : 600,
+                'width' : 160,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
+    </div>
+</div>
+
+<div class="bottom-ad">
+    <script type="text/javascript">
+        atOptions = {
+            'key' : 'd0166b129399f5249594c611abbdd565',
+            'format' : 'iframe',
+            'height' : 90,
+            'width' : 728,
+            'params' : {}
+        };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="game-over-modal" id="gameOverModal">
+    <h2>遊戲結束！</h2>
+    <p>最終分數: <span id="finalScore">0</span></p>
+    <button class="btn-ad" id="btnAd">觀看廣告</button>
+    <button class="btn-restart" id="btnRestart" disabled>重新開始</button>
+    <p class="warning" id="warning">請先點擊「觀看廣告」按鈕</p>
+</div>
+
+<script>
+    const canvas = document.getElementById('tetris');
+    const ctx = canvas.getContext('2d');
+    const ROWS = 20;
+    const COLS = 10;
+    const BLOCK_SIZE = 30;
+    
+    let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    let score = 0;
+    let level = 1;
+    let gameOver = false;
+    let dropInterval = 1000;
+    let lastTime = 0;
+    let adClicked = false;
+    
+    const colors = [
+        null,
+        '#FF0D72',
+        '#0DC2FF',
+        '#0DFF72',
+        '#F538FF',
+        '#FF8E0D',
+        '#FFE138',
+        '#3877FF'
+    ];
+    
+    const shapes = [
+        [[1,1,1,1]],
+        [[1,1],[1,1]],
+        [[1,1,1],[0,1,0]],
+        [[1,1,1],[1,0,0]],
+        [[1,1,1],[0,0,1]],
+        [[1,1,0],[0,1,1]],
+        [[0,1,1],[1,1,0]]
+    ];
+    
+    let currentPiece = {
+        shape: null,
+        color: 0,
+        x: 0,
+        y: 0
+    };
+    
+    function newPiece() {
+        const idx = Math.floor(Math.random() * shapes.length);
+        currentPiece = {
+            shape: shapes[idx],
+            color: idx + 1,
+            x: Math.floor(COLS / 2) - Math.floor(shapes[idx][0].length / 2),
+            y: 0
+        };
+        
+        if (collision()) {
+            gameOver = true;
+            showGameOver();
+        }
+    }
+    
+    function collision() {
+        for (let y = 0; y < currentPiece.shape.length; y++) {
+            for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                if (currentPiece.shape[y][x]) {
+                    const newX = currentPiece.x + x;
+                    const newY = currentPiece.y + y;
+                    
+                    if (newX < 0 || newX >= COLS || newY >= ROWS) {
+                        return true;
+                    }
+                    if (newY >= 0 && board[newY][newX]) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    function merge() {
+        for (let y = 0; y < currentPiece.shape.length; y++) {
+            for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                if (currentPiece.shape[y][x]) {
+                    board[currentPiece.y + y][currentPiece.x + x] = currentPiece.color;
+                }
+            }
+        }
+    }
+    
+    function rotate() {
+        const rotated = currentPiece.shape[0].map((_, i) =>
+            currentPiece.shape.map(row => row[i]).reverse()
+        );
+        const prevShape = currentPiece.shape;
+        currentPiece.shape = rotated;
+        
+        if (collision()) {
+            currentPiece.shape = prevShape;
+        }
+    }
+    
+    function moveLeft() {
+        currentPiece.x--;
+        if (collision()) {
+            currentPiece.x++;
+        }
+    }
+    
+    function moveRight() {
+        currentPiece.x++;
+        if (collision()) {
+            currentPiece.x--;
+        }
+    }
+    
+    function moveDown() {
+        currentPiece.y++;
+        if (collision()) {
+            currentPiece.y--;
+            merge();
+            clearLines();
+            newPiece();
+        }
+    }
+    
+    function clearLines() {
+        let linesCleared = 0;
+        for (let y = ROWS - 1; y >= 0; y--) {
+            if (board[y].every(cell => cell !== 0)) {
+                board.splice(y, 1);
+                board.unshift(Array(COLS).fill(0));
+                linesCleared++;
+                y++;
+            }
+        }
+        
+        if (linesCleared > 0) {
+            score += linesCleared * 100 * level;
+            level = Math.floor(score / 1000) + 1;
+            dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+            updateScore();
+        }
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (board[y][x]) {
+                    ctx.fillStyle = colors[board[y][x]];
+                    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                }
+            }
+        }
+        
+        if (currentPiece.shape) {
+            ctx.fillStyle = colors[currentPiece.color];
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        ctx.fillRect(
+                            (currentPiece.x + x) * BLOCK_SIZE,
+                            (currentPiece.y + y) * BLOCK_SIZE,
+                            BLOCK_SIZE - 1,
+                            BLOCK_SIZE - 1
+                        );
+                    }
+                }
+            }
+        }
+    }
+    
+    function updateScore() {
+        document.getElementById('score').textContent = score;
+        document.getElementById('level').textContent = level;
+    }
+    
+    let dropCounter = 0;
+    
+    function gameLoop(time = 0) {
+        if (gameOver) return;
+        
+        const deltaTime = time - lastTime;
+        
+        dropCounter += deltaTime;
+        if (dropCounter > dropInterval) {
+            moveDown();
+            dropCounter = 0;
+        }
+        
+        lastTime = time;
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    function showGameOver() {
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('gameOverModal').style.display = 'block';
+        adClicked = false;
+        document.getElementById('btnRestart').disabled = true;
+        document.getElementById('warning').style.display = 'none';
+    }
+    
+    function resetGame() {
+        board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        score = 0;
+        level = 1;
+        gameOver = false;
+        dropInterval = 1000;
+        dropCounter = 0;
+        lastTime = 0;
+        updateScore();
+        newPiece();
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('gameOverModal').style.display = 'none';
+        requestAnimationFrame(gameLoop);
+    }
+    
+    document.getElementById('btnLeft').addEventListener('click', () => {
+        if (!gameOver) moveLeft();
+    });
+    
+    document.getElementById('btnRight').addEventListener('click', () => {
+        if (!gameOver) moveRight();
+    });
+    
+    document.getElementById('btnRotate').addEventListener('click', () => {
+        if (!gameOver) rotate();
+    });
+    
+    document.getElementById('btnDown').addEventListener('click', () => {
+        if (!gameOver) moveDown();
+    });
+    
+    document.getElementById('btnAd').addEventListener('click', () => {
+        window.open('https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a', '_blank');
+        adClicked = true;
+        document.getElementById('btnRestart').disabled = false;
+        document.getElementById('warning').style.display = 'none';
+    });
+    
+    document.getElementById('btnRestart').addEventListener('click', () => {
+        if (adClicked) {
+            resetGame();
+        } else {
+            document.getElementById('warning').style.display = 'block';
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (gameOver) return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+                moveLeft();
+                break;
+            case 'ArrowRight':
+                moveRight();
+                break;
+            case 'ArrowDown':
+                moveDown();
+                break;
+            case 'ArrowUp':
+                rotate();
+                break;
+        }
+    });
+    
+    newPiece();
+    requestAnimationFrame(gameLoop);
+</script>
+```
+
+</body>
+</html>
