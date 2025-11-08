@@ -321,6 +321,34 @@
         opacity: 0.6;
     }
     
+    .btn-pay {
+        background: linear-gradient(45deg, #ffd700, #ffed4e);
+        color: #333;
+        padding: 15px 30px;
+        font-size: 18px;
+        margin-bottom: 15px;
+        width: 100%;
+        font-weight: bold;
+    }
+    
+    .btn-pay:hover {
+        background: linear-gradient(45deg, #ffed4e, #ffd700);
+    }
+    
+    .balance-display {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: rgba(255, 215, 0, 0.1);
+        border-radius: 10px;
+        font-size: 16px;
+        color: #333;
+    }
+    
+    .balance-display strong {
+        color: #ffd700;
+        font-size: 20px;
+    }
+    
     .warning {
         color: #e74c3c;
         font-size: 14px;
@@ -460,7 +488,13 @@
 <div class="game-over-modal" id="gameOverModal">
     <h2>遊戲結束！</h2>
     <p>最終分數: <span id="finalScore">0</span></p>
-    <button class="btn-ad" id="btnAd">觀看廣告</button>
+    
+    <div class="balance-display">
+        💰 你的餘額：<strong id="balanceAmount">0</strong> 元
+    </div>
+    
+    <button class="btn-pay" id="btnPay">💵 花 2 元直接重生</button>
+    <button class="btn-ad" id="btnAd">📺 觀看廣告重生（免費）</button>
     <button class="btn-restart" id="btnRestart" disabled>重新開始</button>
     <p class="warning" id="warning">請先點擊「觀看廣告」按鈕</p>
 </div>
@@ -510,7 +544,6 @@
         // 如果廣告已觀看且未過期，更新按鈕狀態
         if (entryAdWatched && entryAdTime && (now - parseInt(entryAdTime)) < 300000) {
             const joinBtn = document.getElementById('joinGameBtn');
-            joinBtn.textContent = '開始遊戲（廣告已觀看）';
             joinBtn.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
         }
     }
@@ -529,42 +562,24 @@
         
         // 如果沒有觀看過入場廣告，或者廣告已過期（5分鐘）
         if (!entryAdWatched || !entryAdTime || (now - parseInt(entryAdTime)) > 300000) {
-            console.log('需要觀看入場廣告');
-            
-            // 提示用戶
-            const userConfirmed = confirm(
-                '歡迎來到俄羅斯方塊！\n\n' +
-                '進入遊戲前需要觀看一次廣告以支持我們的開發\n' +
-                '廣告將在新分頁中打開\n\n' +
-                '請在廣告頁面停留至少 5 秒後關閉\n' +
-                '關閉後點擊「開始遊戲」即可進入\n\n' +
-                '是否繼續？'
-            );
-            
-            if (!userConfirmed) {
-                return;
-            }
+            console.log('第一次點擊：打開廣告');
             
             // 打開廣告新分頁
             window.open('https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a', '_blank');
             
-            // 標記廣告已觀看（5秒後）
-            setTimeout(() => {
-                localStorage.setItem('tetrisEntryAdWatched', 'true');
-                localStorage.setItem('tetrisEntryAdTime', Date.now());
-                
-                // 更新按鈕文字
-                const joinBtn = document.getElementById('joinGameBtn');
-                joinBtn.textContent = '開始遊戲（廣告已觀看）';
-                joinBtn.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
-                
-                showRewardNotification('✅ 廣告已觀看，可以開始遊戲了！');
-            }, 5000);
+            // 立即標記廣告已觀看
+            localStorage.setItem('tetrisEntryAdWatched', 'true');
+            localStorage.setItem('tetrisEntryAdTime', Date.now());
+            
+            // 更新按鈕文字
+            const joinBtn = document.getElementById('joinGameBtn');
+            joinBtn.textContent = '開始遊戲';
+            joinBtn.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
             
             return;
         }
         
-        console.log('已觀看入場廣告，直接進入遊戲');
+        console.log('第二次點擊：直接進入遊戲');
         actuallyStartGame();
     }
     
@@ -812,6 +827,21 @@
         adClicked = false;
         document.getElementById('btnRestart').disabled = true;
         document.getElementById('warning').style.display = 'none';
+        
+        // 更新餘額顯示
+        updateBalanceDisplay();
+        
+        // 重置廣告按鈕
+        document.getElementById('btnAd').textContent = '📺 觀看廣告重生（免費）';
+        document.getElementById('btnAd').style.background = '#e74c3c';
+    }
+    
+    function updateBalanceDisplay() {
+        const balance = parseFloat(localStorage.getItem('tempBalance') || '0');
+        const balanceElement = document.getElementById('balanceAmount');
+        if (balanceElement) {
+            balanceElement.textContent = balance.toFixed(0);
+        }
     }
     
     function resetGame() {
@@ -845,36 +875,44 @@
         if (!gameOver) moveDown();
     });
     
+    // 付費重生按鈕
+    document.getElementById('btnPay').addEventListener('click', () => {
+        const balance = parseFloat(localStorage.getItem('tempBalance') || '0');
+        
+        if (balance >= 2) {
+            const confirmed = confirm('確定要花 2 元直接重生嗎？');
+            if (confirmed) {
+                // 扣除 2 元
+                const newBalance = balance - 2;
+                localStorage.setItem('tempBalance', newBalance.toString());
+                
+                // 顯示通知
+                showRewardNotification('✅ 已扣除 2 元，立即重生！');
+                
+                // 直接重生
+                setTimeout(() => {
+                    resetGame();
+                }, 1000);
+            }
+        } else {
+            alert('餘額不足！\n\n你的餘額：' + balance.toFixed(0) + ' 元\n需要：2 元\n\n請觀看廣告或前往球吃球遊戲賺取餘額');
+        }
+    });
+    
     document.getElementById('btnAd').addEventListener('click', () => {
         if (adClicked) {
             // 第二次點擊：直接重生
             resetGame();
         } else {
-            // 第一次點擊：顯示廣告並標記
-            const userConfirmed = confirm(
-                '觀看廣告可立即重生\n\n' +
-                '⚠️ 注意：將會開啟廣告頁面\n' +
-                '請在廣告頁面停留至少5秒後關閉\n\n' +
-                '是否繼續？'
-            );
+            // 第一次點擊：打開廣告
+            window.open('https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a', '_blank');
             
-            if (userConfirmed) {
-                // 標記廣告觀看
-                localStorage.setItem('tetrisAdWatched', 'true');
-                localStorage.setItem('tetrisAdWatchTime', Date.now());
-                
-                // 打開廣告
-                window.open('https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a', '_blank');
-                
-                // 標記為已點擊
-                adClicked = true;
-                document.getElementById('btnRestart').disabled = false;
-                document.getElementById('warning').style.display = 'none';
-                document.getElementById('btnAd').textContent = '立即重生（廣告已觀看）';
-                document.getElementById('btnAd').style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
-                
-                showRewardNotification('🎉 感謝觀看廣告！');
-            }
+            // 標記為已點擊
+            adClicked = true;
+            document.getElementById('btnRestart').disabled = false;
+            document.getElementById('warning').style.display = 'none';
+            document.getElementById('btnAd').textContent = '✅ 立即重生（廣告已觀看）';
+            document.getElementById('btnAd').style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
         }
     });
     
