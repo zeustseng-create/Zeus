@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄羅斯方塊</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        /* 登入界面樣式 */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .login-container h1 {
+            color: #667eea;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .login-container h2 {
+            color: #764ba2;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-join {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-join:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-join:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .game-info-preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .game-info-preview p {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .game-info-preview ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .game-info-preview li {
+            padding: 5px 0;
+            color: #333;
+        }
+        
+        .game-info-preview li:before {
+            content: "▸ ";
+            color: #764ba2;
+            font-weight: bold;
+        }
+        
+        .ad-notice {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            border: 2px solid #ffc107;
+        }
+        
+        .ad-notice p {
+            margin: 0;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+    
+    .top-ad {
+        margin-bottom: 20px;
+        min-height: 90px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .game-container {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+    
+    .left-ad, .right-ad {
+        min-width: 160px;
+        min-height: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .center-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .score-board {
+        display: flex;
+        gap: 40px;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    canvas {
+        border: 3px solid #333;
+        border-radius: 5px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        display: block;
+    }
+    
+    .controls {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    button {
+        padding: 15px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    button:active {
+        transform: translateY(0);
+    }
+    
+    .btn-left {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-rotate {
+        background: #2196F3;
+        color: white;
+    }
+    
+    .btn-right {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .btn-down {
+        background: #FF9800;
+        color: white;
+        grid-column: 2;
+    }
+    
+    .game-over-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        text-align: center;
+    }
+    
+    .game-over-modal h2 {
+        color: #e74c3c;
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+    
+    .game-over-modal p {
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    
+    .btn-ad {
+        background: #e74c3c;
+        color: white;
+        padding: 15px 30px;
+        font-size: 18px;
+        margin-bottom: 15px;
+        width: 100%;
+    }
+    
+    .btn-restart {
+        background: #27ae60;
+        color: white;
+        padding: 15px 30px;
+        font-size: 18px;
+        width: 100%;
+    }
+    
+    .btn-restart:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .warning {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 10px;
+        display: none;
+    }
+    
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999;
+    }
+    
+    .bottom-ad {
+        margin-top: 20px;
+        min-height: 90px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+```
+
+</head>
+<body>
+    <!-- 登入界面 -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <h1>🎮 俄羅斯方塊</h1>
+            <h2>經典益智遊戲</h2>
+            
+            <div class="input-group">
+                <label for="playerName">輸入你的名字：</label>
+                <input type="text" id="playerName" maxlength="12" placeholder="請輸入名字..." autocomplete="off">
+            </div>
+            
+            <button id="joinGameBtn" class="btn-join" disabled>開始遊戲</button>
+            
+            <div class="game-info-preview">
+                <p>🎯 遊戲規則：</p>
+                <ul>
+                    <li>使用方向鍵或 WASD 控制方塊</li>
+                    <li>↑ 或 W：旋轉方塊</li>
+                    <li>← → 或 A D：左右移動</li>
+                    <li>↓ 或 S：加速下落</li>
+                    <li>消除整行得分，挑戰高分！</li>
+                </ul>
+            </div>
+            
+            <div class="ad-notice">
+                <p>ℹ️ 進入遊戲前需要觀看一次廣告以支持我們的開發</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊戲界面 -->
+    <div id="gameContainer" style="display: none;">
+    <div class="top-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : 'd0166b129399f5249594c611abbdd565',
+                'format' : 'iframe',
+                'height' : 90,
+                'width' : 728,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+    </div>
+
+```
+<div class="game-container">
+    <div class="left-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
+                'format' : 'iframe',
+                'height' : 600,
+                'width' : 160,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
+    </div>
+    
+    <div class="center-content">
+        <div class="score-board">
+            <div>分數: <span id="score">0</span></div>
+            <div>等級: <span id="level">1</span></div>
+        </div>
+        
+        <canvas id="tetris" width="300" height="600"></canvas>
+        
+        <div class="controls">
+            <button class="btn-left" id="btnLeft">← 左</button>
+            <button class="btn-rotate" id="btnRotate">↻ 旋轉</button>
+            <button class="btn-right" id="btnRight">右 →</button>
+            <button class="btn-down" id="btnDown">↓ 加速</button>
+        </div>
+    </div>
+    
+    <div class="right-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '4770e40beba45b21d2a59b5a1e5e13a8',
+                'format' : 'iframe',
+                'height' : 600,
+                'width' : 160,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/4770e40beba45b21d2a59b5a1e5e13a8/invoke.js"></script>
+    </div>
+</div>
+
+<div class="bottom-ad">
+    <script type="text/javascript">
+        atOptions = {
+            'key' : 'd0166b129399f5249594c611abbdd565',
+            'format' : 'iframe',
+            'height' : 90,
+            'width' : 728,
+            'params' : {}
+        };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/d0166b129399f5249594c611abbdd565/invoke.js"></script>
+</div>
+    </div>
+    <!-- 遊戲界面結束 -->
+
+<div class="overlay" id="overlay"></div>
+<div class="game-over-modal" id="gameOverModal">
+    <h2>遊戲結束！</h2>
+    <p>最終分數: <span id="finalScore">0</span></p>
+    <button class="btn-ad" id="btnAd">觀看廣告</button>
+    <button class="btn-restart" id="btnRestart" disabled>重新開始</button>
+    <p class="warning" id="warning">請先點擊「觀看廣告」按鈕</p>
+</div>
+
+<script>
+    // ========== 登入系統 ==========
+    let playerName = '';
+    let gameStarted = false;
+    
+    // 頁面載入時檢查廣告狀態
+    window.addEventListener('load', () => {
+        checkAdStatus();
+        setupLoginListeners();
+    });
+    
+    function setupLoginListeners() {
+        const nameInput = document.getElementById('playerName');
+        const joinBtn = document.getElementById('joinGameBtn');
+        
+        // 監聽名字輸入
+        nameInput.addEventListener('input', () => {
+            const name = nameInput.value.trim();
+            joinBtn.disabled = name.length === 0;
+        });
+        
+        // Enter 鍵加入遊戲
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !joinBtn.disabled) {
+                joinGame();
+            }
+        });
+        
+        // 點擊按鈕加入遊戲
+        joinBtn.addEventListener('click', () => {
+            joinGame();
+        });
+    }
+    
+    function checkAdStatus() {
+        console.log('檢查廣告狀態...');
+        
+        const adWatched = localStorage.getItem('tetrisAdWatched');
+        const isEntryAd = localStorage.getItem('tetrisIsEntryAd');
+        const adWatchTime = localStorage.getItem('tetrisAdWatchTime');
+        
+        console.log('localStorage 狀態:', {
+            adWatched: adWatched,
+            isEntryAd: isEntryAd,
+            adWatchTime: adWatchTime
+        });
+        
+        // 如果是入場廣告返回
+        if (isEntryAd === 'true' && adWatched === 'true') {
+            console.log('檢測到入場廣告已觀看，準備進入遊戲');
+            
+            const watchTime = parseInt(adWatchTime);
+            const now = Date.now();
+            
+            if (watchTime && (now - watchTime) < 300000) { // 5分鐘內有效
+                // 設置入場廣告已觀看標記
+                localStorage.setItem('tetrisEntryAdWatched', 'true');
+                localStorage.setItem('tetrisEntryAdTime', Date.now());
+                
+                // 清除臨時標記
+                localStorage.removeItem('tetrisIsEntryAd');
+                localStorage.removeItem('tetrisAdWatched');
+                localStorage.removeItem('tetrisAdWatchTime');
+                
+                // 恢復玩家設置
+                playerName = localStorage.getItem('tetrisPlayerName') || '';
+                
+                if (playerName) {
+                    document.getElementById('playerName').value = playerName;
+                    console.log('自動進入遊戲...');
+                    actuallyStartGame();
+                }
+                
+                return;
+            } else {
+                console.log('❌ 入場廣告觀看時間過期');
+                localStorage.removeItem('tetrisIsEntryAd');
+                localStorage.removeItem('tetrisEntryAdWatched');
+                localStorage.removeItem('tetrisEntryAdTime');
+            }
+        }
+    }
+    
+    function joinGame() {
+        playerName = document.getElementById('playerName').value.trim();
+        if (playerName.length === 0) return;
+        
+        // 保存玩家名字
+        localStorage.setItem('tetrisPlayerName', playerName);
+        
+        // 檢查是否已經觀看過入場廣告
+        const entryAdWatched = localStorage.getItem('tetrisEntryAdWatched');
+        const entryAdTime = localStorage.getItem('tetrisEntryAdTime');
+        const now = Date.now();
+        
+        // 如果沒有觀看過入場廣告，或者廣告已過期（5分鐘）
+        if (!entryAdWatched || !entryAdTime || (now - parseInt(entryAdTime)) > 300000) {
+            console.log('需要觀看入場廣告');
+            
+            // 標記這是入場廣告
+            localStorage.setItem('tetrisIsEntryAd', 'true');
+            
+            // 跳轉到廣告頁面
+            window.location.href = 'https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a';
+            return;
+        }
+        
+        console.log('已觀看入場廣告，直接進入遊戲');
+        actuallyStartGame();
+    }
+    
+    function actuallyStartGame() {
+        console.log('開始遊戲...');
+        
+        // 隱藏登入界面，顯示遊戲界面
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('gameContainer').style.display = 'block';
+        
+        gameStarted = true;
+        
+        // 初始化遊戲
+        initGame();
+    }
+    
+    function showRewardNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 10000;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: bounceIn 0.5s;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'fadeOut 0.5s';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 500);
+        }, 3000);
+    }
+    
+    // ========== 遊戲邏輯 ==========
+    const canvas = document.getElementById('tetris');
+    const ctx = canvas.getContext('2d');
+    const ROWS = 20;
+    const COLS = 10;
+    const BLOCK_SIZE = 30;
+    
+    let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    let score = 0;
+    let level = 1;
+    let gameOver = false;
+    let dropInterval = 1000;
+    let lastTime = 0;
+    let adClicked = false;
+    
+    const colors = [
+        null,
+        '#FF0D72',
+        '#0DC2FF',
+        '#0DFF72',
+        '#F538FF',
+        '#FF8E0D',
+        '#FFE138',
+        '#3877FF'
+    ];
+    
+    const shapes = [
+        [[1,1,1,1]],
+        [[1,1],[1,1]],
+        [[1,1,1],[0,1,0]],
+        [[1,1,1],[1,0,0]],
+        [[1,1,1],[0,0,1]],
+        [[1,1,0],[0,1,1]],
+        [[0,1,1],[1,1,0]]
+    ];
+    
+    let currentPiece = {
+        shape: null,
+        color: 0,
+        x: 0,
+        y: 0
+    };
+    
+    function newPiece() {
+        const idx = Math.floor(Math.random() * shapes.length);
+        currentPiece = {
+            shape: shapes[idx],
+            color: idx + 1,
+            x: Math.floor(COLS / 2) - Math.floor(shapes[idx][0].length / 2),
+            y: 0
+        };
+        
+        if (collision()) {
+            gameOver = true;
+            showGameOver();
+        }
+    }
+    
+    function collision() {
+        for (let y = 0; y < currentPiece.shape.length; y++) {
+            for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                if (currentPiece.shape[y][x]) {
+                    const newX = currentPiece.x + x;
+                    const newY = currentPiece.y + y;
+                    
+                    if (newX < 0 || newX >= COLS || newY >= ROWS) {
+                        return true;
+                    }
+                    if (newY >= 0 && board[newY][newX]) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    function merge() {
+        for (let y = 0; y < currentPiece.shape.length; y++) {
+            for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                if (currentPiece.shape[y][x]) {
+                    board[currentPiece.y + y][currentPiece.x + x] = currentPiece.color;
+                }
+            }
+        }
+    }
+    
+    function rotate() {
+        const rotated = currentPiece.shape[0].map((_, i) =>
+            currentPiece.shape.map(row => row[i]).reverse()
+        );
+        const prevShape = currentPiece.shape;
+        currentPiece.shape = rotated;
+        
+        if (collision()) {
+            currentPiece.shape = prevShape;
+        }
+    }
+    
+    function moveLeft() {
+        currentPiece.x--;
+        if (collision()) {
+            currentPiece.x++;
+        }
+    }
+    
+    function moveRight() {
+        currentPiece.x++;
+        if (collision()) {
+            currentPiece.x--;
+        }
+    }
+    
+    function moveDown() {
+        currentPiece.y++;
+        if (collision()) {
+            currentPiece.y--;
+            merge();
+            clearLines();
+            newPiece();
+        }
+    }
+    
+    function clearLines() {
+        let linesCleared = 0;
+        for (let y = ROWS - 1; y >= 0; y--) {
+            if (board[y].every(cell => cell !== 0)) {
+                board.splice(y, 1);
+                board.unshift(Array(COLS).fill(0));
+                linesCleared++;
+                y++;
+            }
+        }
+        
+        if (linesCleared > 0) {
+            score += linesCleared * 100 * level;
+            level = Math.floor(score / 1000) + 1;
+            dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+            updateScore();
+        }
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (board[y][x]) {
+                    ctx.fillStyle = colors[board[y][x]];
+                    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                }
+            }
+        }
+        
+        if (currentPiece.shape) {
+            ctx.fillStyle = colors[currentPiece.color];
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        ctx.fillRect(
+                            (currentPiece.x + x) * BLOCK_SIZE,
+                            (currentPiece.y + y) * BLOCK_SIZE,
+                            BLOCK_SIZE - 1,
+                            BLOCK_SIZE - 1
+                        );
+                    }
+                }
+            }
+        }
+    }
+    
+    function updateScore() {
+        document.getElementById('score').textContent = score;
+        document.getElementById('level').textContent = level;
+    }
+    
+    let dropCounter = 0;
+    
+    function gameLoop(time = 0) {
+        if (gameOver) return;
+        
+        const deltaTime = time - lastTime;
+        
+        dropCounter += deltaTime;
+        if (dropCounter > dropInterval) {
+            moveDown();
+            dropCounter = 0;
+        }
+        
+        lastTime = time;
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    function showGameOver() {
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('gameOverModal').style.display = 'block';
+        adClicked = false;
+        document.getElementById('btnRestart').disabled = true;
+        document.getElementById('warning').style.display = 'none';
+    }
+    
+    function resetGame() {
+        board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        score = 0;
+        level = 1;
+        gameOver = false;
+        dropInterval = 1000;
+        dropCounter = 0;
+        lastTime = 0;
+        updateScore();
+        newPiece();
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('gameOverModal').style.display = 'none';
+        requestAnimationFrame(gameLoop);
+    }
+    
+    document.getElementById('btnLeft').addEventListener('click', () => {
+        if (!gameOver) moveLeft();
+    });
+    
+    document.getElementById('btnRight').addEventListener('click', () => {
+        if (!gameOver) moveRight();
+    });
+    
+    document.getElementById('btnRotate').addEventListener('click', () => {
+        if (!gameOver) rotate();
+    });
+    
+    document.getElementById('btnDown').addEventListener('click', () => {
+        if (!gameOver) moveDown();
+    });
+    
+    document.getElementById('btnAd').addEventListener('click', () => {
+        if (adClicked) {
+            // 第二次點擊：直接重生
+            resetGame();
+        } else {
+            // 第一次點擊：顯示廣告並標記
+            const userConfirmed = confirm(
+                '觀看廣告可立即重生\n\n' +
+                '⚠️ 注意：將會開啟廣告頁面\n' +
+                '請在廣告頁面停留至少5秒後關閉\n\n' +
+                '是否繼續？'
+            );
+            
+            if (userConfirmed) {
+                // 標記廣告觀看
+                localStorage.setItem('tetrisAdWatched', 'true');
+                localStorage.setItem('tetrisAdWatchTime', Date.now());
+                
+                // 打開廣告
+                window.open('https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a', '_blank');
+                
+                // 標記為已點擊
+                adClicked = true;
+                document.getElementById('btnRestart').disabled = false;
+                document.getElementById('warning').style.display = 'none';
+                document.getElementById('btnAd').textContent = '立即重生（廣告已觀看）';
+                document.getElementById('btnAd').style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
+                
+                showRewardNotification('🎉 感謝觀看廣告！');
+            }
+        }
+    });
+    
+    document.getElementById('btnRestart').addEventListener('click', () => {
+        if (adClicked) {
+            resetGame();
+        } else {
+            document.getElementById('warning').style.display = 'block';
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (!gameStarted || gameOver) return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+            case 'KeyA':
+                moveLeft();
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+            case 'KeyD':
+                moveRight();
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+            case 'KeyS':
+                moveDown();
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+            case 'KeyW':
+                rotate();
+                e.preventDefault();
+                break;
+        }
+    });
+    
+    // 遊戲初始化函數
+    function initGame() {
+        console.log('初始化遊戲...');
+        newPiece();
+        requestAnimationFrame(gameLoop);
+    }
+</script>
+```
+
+</body>
+</html>
