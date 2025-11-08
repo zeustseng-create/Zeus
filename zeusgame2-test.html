@@ -502,49 +502,16 @@
     function checkAdStatus() {
         console.log('檢查廣告狀態...');
         
-        const adWatched = localStorage.getItem('tetrisAdWatched');
-        const isEntryAd = localStorage.getItem('tetrisIsEntryAd');
-        const adWatchTime = localStorage.getItem('tetrisAdWatchTime');
+        // 檢查是否已經觀看過入場廣告
+        const entryAdWatched = localStorage.getItem('tetrisEntryAdWatched');
+        const entryAdTime = localStorage.getItem('tetrisEntryAdTime');
+        const now = Date.now();
         
-        console.log('localStorage 狀態:', {
-            adWatched: adWatched,
-            isEntryAd: isEntryAd,
-            adWatchTime: adWatchTime
-        });
-        
-        // 如果是入場廣告返回
-        if (isEntryAd === 'true' && adWatched === 'true') {
-            console.log('檢測到入場廣告已觀看，準備進入遊戲');
-            
-            const watchTime = parseInt(adWatchTime);
-            const now = Date.now();
-            
-            if (watchTime && (now - watchTime) < 300000) { // 5分鐘內有效
-                // 設置入場廣告已觀看標記
-                localStorage.setItem('tetrisEntryAdWatched', 'true');
-                localStorage.setItem('tetrisEntryAdTime', Date.now());
-                
-                // 清除臨時標記
-                localStorage.removeItem('tetrisIsEntryAd');
-                localStorage.removeItem('tetrisAdWatched');
-                localStorage.removeItem('tetrisAdWatchTime');
-                
-                // 恢復玩家設置
-                playerName = localStorage.getItem('tetrisPlayerName') || '';
-                
-                if (playerName) {
-                    document.getElementById('playerName').value = playerName;
-                    console.log('自動進入遊戲...');
-                    actuallyStartGame();
-                }
-                
-                return;
-            } else {
-                console.log('❌ 入場廣告觀看時間過期');
-                localStorage.removeItem('tetrisIsEntryAd');
-                localStorage.removeItem('tetrisEntryAdWatched');
-                localStorage.removeItem('tetrisEntryAdTime');
-            }
+        // 如果廣告已觀看且未過期，更新按鈕狀態
+        if (entryAdWatched && entryAdTime && (now - parseInt(entryAdTime)) < 300000) {
+            const joinBtn = document.getElementById('joinGameBtn');
+            joinBtn.textContent = '開始遊戲（廣告已觀看）';
+            joinBtn.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
         }
     }
     
@@ -564,11 +531,36 @@
         if (!entryAdWatched || !entryAdTime || (now - parseInt(entryAdTime)) > 300000) {
             console.log('需要觀看入場廣告');
             
-            // 標記這是入場廣告
-            localStorage.setItem('tetrisIsEntryAd', 'true');
+            // 提示用戶
+            const userConfirmed = confirm(
+                '歡迎來到俄羅斯方塊！\n\n' +
+                '進入遊戲前需要觀看一次廣告以支持我們的開發\n' +
+                '廣告將在新分頁中打開\n\n' +
+                '請在廣告頁面停留至少 5 秒後關閉\n' +
+                '關閉後點擊「開始遊戲」即可進入\n\n' +
+                '是否繼續？'
+            );
             
-            // 跳轉到廣告頁面
-            window.location.href = 'https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a';
+            if (!userConfirmed) {
+                return;
+            }
+            
+            // 打開廣告新分頁
+            window.open('https://www.effectivegatecpm.com/wgxrg6s3?key=b3f29030287da7e57d572961b93ee41a', '_blank');
+            
+            // 標記廣告已觀看（5秒後）
+            setTimeout(() => {
+                localStorage.setItem('tetrisEntryAdWatched', 'true');
+                localStorage.setItem('tetrisEntryAdTime', Date.now());
+                
+                // 更新按鈕文字
+                const joinBtn = document.getElementById('joinGameBtn');
+                joinBtn.textContent = '開始遊戲（廣告已觀看）';
+                joinBtn.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
+                
+                showRewardNotification('✅ 廣告已觀看，可以開始遊戲了！');
+            }, 5000);
+            
             return;
         }
         
