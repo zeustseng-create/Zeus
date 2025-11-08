@@ -392,6 +392,23 @@
             
             <button id="joinGameBtn" class="btn-join" disabled>開始遊戲</button>
             
+            <!-- 帳戶管理按鈕 -->
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="openAccountManager()" style="flex: 1; background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); transition: all 0.3s;">
+                    👤 帳戶管理
+                </button>
+                <button onclick="earnMoney()" style="flex: 1; background: linear-gradient(45deg, #ffd700, #ffed4e); color: #333; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); transition: all 0.3s;">
+                    💰 賺錢（看廣告）
+                </button>
+            </div>
+            
+            <!-- 臨時存款顯示 -->
+            <div id="tempBalanceDisplay" style="margin-top: 15px; padding: 12px; background: rgba(255, 193, 7, 0.2); border-radius: 10px; border: 2px solid #ffc107; text-align: center;">
+                <span style="font-size: 14px;">💵 臨時存款：</span>
+                <span id="tempBalanceAmount" style="font-size: 18px; font-weight: bold; color: #ffd700;">0</span>
+                <span style="font-size: 14px;"> 元</span>
+            </div>
+            
             <div class="game-info-preview">
                 <p>🎯 遊戲規則：</p>
                 <ul>
@@ -489,11 +506,16 @@
     <h2>遊戲結束！</h2>
     <p>最終分數: <span id="finalScore">0</span></p>
     
+    <!-- 登入狀態顯示 -->
+    <div id="loginStatus" style="margin-bottom: 10px; padding: 8px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; font-size: 14px; color: #4CAF50; display: none;">
+        ✅ 已登入：<strong id="loggedInUsername"></strong>
+    </div>
+    
     <div class="balance-display">
         💰 你的餘額：<strong id="balanceAmount">0</strong> 元
     </div>
     
-    <button class="btn-pay" id="btnPay">💵 花 2 元直接重生</button>
+    <button class="btn-pay" id="btnPay">💵 花 2 元直接重生（需登入）</button>
     <button class="btn-ad" id="btnAd">📺 觀看廣告重生（免費）</button>
     <button class="btn-restart" id="btnRestart" disabled>重新開始</button>
     <p class="warning" id="warning">請先點擊「觀看廣告」按鈕</p>
@@ -831,9 +853,30 @@
         // 更新餘額顯示
         updateBalanceDisplay();
         
+        // 更新登入狀態顯示
+        updateLoginStatus();
+        
         // 重置廣告按鈕
         document.getElementById('btnAd').textContent = '📺 觀看廣告重生（免費）';
         document.getElementById('btnAd').style.background = '#e74c3c';
+    }
+    
+    function updateLoginStatus() {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        const loginStatusDiv = document.getElementById('loginStatus');
+        const loggedInUsername = document.getElementById('loggedInUsername');
+        const btnPay = document.getElementById('btnPay');
+        
+        if (loggedInUser) {
+            // 已登入
+            loginStatusDiv.style.display = 'block';
+            loggedInUsername.textContent = loggedInUser;
+            btnPay.textContent = '💵 花 2 元直接重生';
+        } else {
+            // 未登入
+            loginStatusDiv.style.display = 'none';
+            btnPay.textContent = '💵 花 2 元直接重生（需登入）';
+        }
     }
     
     function updateBalanceDisplay() {
@@ -875,8 +918,29 @@
         if (!gameOver) moveDown();
     });
     
+    // 檢查是否已登入
+    function isLoggedIn() {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        return loggedInUser !== null && loggedInUser !== '';
+    }
+    
     // 付費重生按鈕
     document.getElementById('btnPay').addEventListener('click', () => {
+        // 檢查是否已登入
+        if (!isLoggedIn()) {
+            const goToLogin = confirm(
+                '⚠️ 請先登入帳戶\n\n' +
+                '付費重生需要登入帳戶才能使用\n' +
+                '這樣可以確保你的餘額安全\n\n' +
+                '是否前往帳戶管理頁面登入？'
+            );
+            
+            if (goToLogin) {
+                openAccountManager();
+            }
+            return;
+        }
+        
         const balance = parseFloat(localStorage.getItem('tempBalance') || '0');
         
         if (balance >= 2) {
@@ -957,8 +1021,79 @@
         newPiece();
         requestAnimationFrame(gameLoop);
     }
+    
+    // ========== 帳戶管理功能 ==========
+    
+    // 打開帳戶管理
+    function openAccountManager() {
+        // 使用相對路徑，假設 account-manager.html 在上層目錄的 yige-project拷貝 資料夾
+        window.open('../yige-project拷貝/account-manager.html', 'accountManager', 'width=600,height=800');
+    }
+    
+    // 賺錢功能 - 打開廣告鏈結
+    function earnMoney() {
+        // 打開廣告鏈結
+        window.open('https://www.effectivegatecpm.com/bnkf9sxs?key=a7de8c1911010b51682764663a6e783c', '_blank');
+        
+        // 簡化版：直接增加臨時存款
+        setTimeout(() => {
+            let tempBalance = parseFloat(localStorage.getItem('tempBalance') || '0');
+            tempBalance += 1;
+            localStorage.setItem('tempBalance', tempBalance.toString());
+            updateTempBalanceDisplay();
+            showRewardNotification('🎉 恭喜獲得 +1 元！');
+        }, 2000);
+    }
+    
+    // 更新臨時存款顯示
+    function updateTempBalanceDisplay() {
+        const tempBalance = parseFloat(localStorage.getItem('tempBalance') || '0');
+        const element = document.getElementById('tempBalanceAmount');
+        if (element) {
+            element.textContent = tempBalance.toFixed(0);
+            
+            // 如果有臨時存款，添加閃爍效果
+            if (tempBalance > 0) {
+                element.style.animation = 'pulse 1s infinite';
+            } else {
+                element.style.animation = 'none';
+            }
+        }
+    }
+    
+    // 頁面載入時更新臨時存款
+    window.addEventListener('load', () => {
+        updateTempBalanceDisplay();
+        
+        // 每5秒更新一次臨時存款顯示
+        setInterval(updateTempBalanceDisplay, 5000);
+    });
+    
+    // 監聽 storage 事件（當其他窗口更新 localStorage 時）
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'tempBalance') {
+            updateTempBalanceDisplay();
+        }
+    });
+    
+    // 添加 pulse 動畫
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 ```
+
+</body>
+</html>
 
 </body>
 </html>
