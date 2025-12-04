@@ -2,253 +2,325 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>經典 Pacman 單檔版 - 直接開就玩</title>
+<title>完美原版 Pacman - 無限關 3命+加命 256殺屏</title>
 <style>
-    body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; image-rendering:pixelated; }
-    canvas { border:5px solid #00ffff; box-shadow:0 0 30px #00ffff; }
-    #score { position:absolute; top:10px; left:10px; color:#fff; font: bold 24px Arial; text-shadow:0 0 10px #00ffff; }
-    #lives { position:absolute; top:10px; right:10px; color:#fff; font: bold 24px Arial; text-shadow:0 0 10px #00ffff; }
-    #start-screen, #game-over { position:absolute; width:100%; height:100%; background:rgba(0,0,0,0.8); color:#ff0; font: bold 48px Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; justify-content:center; }
-    button { margin-top:30px; padding:15px 40px; font-size:28px; background:#ff0; color:#000; border:none; border-radius:10px; cursor:pointer; }
-    button:hover { background:#ff0; box-shadow:0 0 20px #ff0; }
+    body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; image-rendering:pixelated; overflow:hidden; }
+    canvas { border:6px solid #00ffff; box-shadow:0 0 40px #00ffff; image-rendering: pixelated; }
+    #info { position:absolute; top:10px; left:10px; color:#fff; font:bold 20px 'Courier New'; text-shadow:0 0 10px #0ff; }
+    #lives { position:absolute; top:10px; right:10px; color:#ff0; font:bold 24px Arial; }
+    #level { position:absolute; bottom:10px; left:10px; color:#ff0; font:bold 18px Arial; }
+    #start, #over { position:absolute; inset:0; background:#000c; color:#ff0; font:bold 48px Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    button { margin-top:30px; padding:20px 50px; font-size:30px; background:#ff0; color:#000; border:none; border-radius:15px; cursor:pointer; box-shadow:0 0 20px #ff0; }
+    button:hover { transform:scale(1.05); }
 </style>
 </head>
 <body>
 
-<div id="score">分數: 0</div>
+<div id="info">分數: <span id="score">0</span>　　最高: <span id="hiscore">0</span></div>
 <div id="lives">❤❤❤</div>
+<div id="level">關卡 1</div>
 
-<canvas id="canvas" width="448" height="496"></canvas>
+<canvas id="c" width="448" height="496"></canvas>
 
-<div id="start-screen">
-    <div>PACMAN</div>
+<div id="start">
+    <div>完美原版 PACMAN</div>
+    <div style="font-size:28px;margin:20px">3命無限關 | 10k加命 | 四鬼真AI | 256殺屏</div>
     <button onclick="startGame()">開始遊戲</button>
-    <div style="margin-top:50px; font-size:24px;">方向鍵或 WASD 移動</div>
 </div>
 
-<div id="game-over" style="display:none;">
+<div id="over" style="display:none">
     <div>GAME OVER</div>
-    <div style="font-size:36px; margin:20px;">最終分數: <span id="final-score">0</span></div>
+    <div style="font-size:36px;margin:20px">最終分數 <span id="final">0</span></div>
     <button onclick="location.reload()">再來一局</button>
 </div>
 
 <script>
-// 超簡化但超好玩的 Pacman（448×496 像素經典尺寸）
-const canvas = document.getElementById('canvas');
+const TILE = 8;
+const WIDTH = 28, HEIGHT = 31;
+const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-const TILE = 16;
+ctx.scale(2,2); ctx.imageSmoothingEnabled = false;
 
-const map = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1],
-  [1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,1,1,3,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,2,1],
-  [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,1,1,2,2,2,2,2,1],
-  [1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,2,1,1,1,1,1],
-  [0,0,0,0,0,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,2,1,0,0,0,0],
-  [1,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1],
-  [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
-  [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
-  [0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0],
-  [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
-  [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
-  [1,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1],
-  [0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0],
-  [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1],
-  [1,2,2,1,1,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,1,1,2,2,1],
-  [1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1],
-  [1,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1],
-  [1,3,2,2,1,1,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,1,1,2,2,3,1],
-  [1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1],
-  [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,1,1,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+let level = 1, score = 0, hiscore = +localStorage.getItem('pacHiscore') || 0;
+let lives = 3, dotsLeft = 0, gameRunning = false, globalTimer = 0;
+let frightenedTimer = 0, modeTimer = 0, modeTimeLeft = 420; // 7s *60
+
+// 標準地圖（清理空格）
+const rawMap = [
+"1111111111111111111111111111",
+"1222222222222112222222222221",
+"1211112111121112111121111211",
+"1331112111121112111121111331",
+"1222222222222222222222222221",
+"1211112111121121112111121121",
+"1222222222222222222222222221",
+"1112112111110110111111211121",
+"0002112000000110000001221100",
+"1112112111122221112111211121",
+"1112112111111111111121112111",
+"1112112111000000001121112111",
+"0000002000111111110020000000",
+"1112112000111111111002112111",
+"1112112111111111111121112111",
+"1112112111000000001121112111",
+"0002112000111111110021121100",
+"1112112111122221112111211121",
+"1222222222222112222222222221",
+"1211112111121112111121111211",
+"1222112222222222222222212221",
+"1121121111101101111112111211",
+"1222112222112112112221122221",
+"1211111111112111111111111211",
+"1332222222222222222222222331",
+"1112112111121112111121112111",
+"1222112000000110000001122221",
+"1212112222112112112221121121",
+"1222222222222222222222222221",
+"1111111111111111111111111111"
 ];
 
-let pacman = { x:14, y:23, dir:0, nextDir:0, mouth:0 };
+let map = rawMap.map(row => row.split('').map(c => +c));
+
+let pacman = {x:13.5, y:23, dir:0, nextDir:0, mouth:0};
 let ghosts = [
-    {x:13, y:11, dir:2, color:'#f00', mode:'chase'}, // 紅
-    {x:13, y:14, dir:1, color:'#ffb8ff', mode:'chase'}, // 粉
-    {x:15, y:14, dir:3, color:'#00ffff', mode:'chase'}, // 青
-    {x:11, y:14, dir:0, color:'#ffb851', mode:'chase'}  // 橘
+    {name:"Blinky", x:13.5, y:11, dir:2, color:"#f84", scatter:{x:25,y:-2}, elroy:0 },
+    {name:"Pinky",  x:13.5, y:14, dir:0, color:"#ffb8ff", scatter:{x:2,y:31} },
+    {name:"Inky",   x:11.5, y:14, dir:0, color:"#00ffff", scatter:{x:27,y:-2} },
+    {name:"Clyde",  x:15.5, y:14, dir:0, color:"#ffb852", scatter:{x:0,y:31} }
 ];
-let score = 0;
-let lives = 3;
-let dots = 0;
-let powerMode = 0;
-let gameRunning = false;
 
-const dirs = [[1,0],[0,-1],[-1,0],[0,1]]; // 右上左下
+const dirs = [[0.1,0], [0,-0.1], [-0.1,0], [0,0.1]]; // px/frame
 
 function drawMap() {
-    for(let y=0; y<map.length; y++){
-        for(let x=0; x<map[y].length; x++){
-            let v = map[y][x];
-            if(v===1){
-                ctx.fillStyle = '#00f';
-                ctx.fillRect(x*TILE, y*TILE, TILE, TILE);
-            } else if(v===2 || v===3){
-                ctx.fillStyle = v===3 ? '#f00' : '#fff';
-                ctx.beginPath();
-                ctx.arc(x*TILE/2 + x*TILE, TILE/2 + y*TILE, v===3?6:2, 0, Math.PI*2);
-                ctx.fill();
-            }
+    ctx.fillStyle = '#4488ff';
+    for(let y=0; y<HEIGHT; y++) for(let x=0; x<WIDTH; x++) {
+        if(map[y][x]===1) ctx.fillRect(x*TILE, y*TILE, TILE, TILE);
+        else if(map[y][x]===2) {
+            ctx.fillStyle = '#ffb897';
+            ctx.fillRect(x*TILE+3, y*TILE+3, 2, 2);
+        } else if(map[y][x]===3) {
+            ctx.fillStyle = '#e61d23';
+            ctx.beginPath();
+            ctx.arc(x*TILE+4, y*TILE+4, 3, 0, Math.PI*2);
+            ctx.fill();
         }
     }
 }
 
 function drawPacman() {
-    let angle = pacman.mouth ? 0.2 : 0.05;
-    ctx.fillStyle = '#ff0';
+    ctx.fillStyle = '#ffff00';
+    let angle = pacman.mouth ? 0.25 : 0.15;
     ctx.beginPath();
-    ctx.arc(pacman.x*TILE + TILE/2, pacman.y*TILE + TILE/2, TILE/2 * 0.9, 
-            angle*Math.PI - pacman.dir*Math.PI/2, (2-angle)*Math.PI - pacman.dir*Math.PI/2);
-    ctx.lineTo(pacman.x*TILE + TILE/2, pacman.y*TILE + TILE/2);
+    ctx.arc(pacman.x*TILE, pacman.y*TILE, TILE*0.95, pacman.dir * Math.PI*1.5 + angle, pacman.dir * Math.PI*1.5 + Math.PI*2 - angle);
+    ctx.lineTo(pacman.x*TILE, pacman.y*TILE);
     ctx.fill();
 }
 
 function drawGhosts() {
-    ghosts.forEach(g=>{
-        ctx.fillStyle = powerMode>0 ? '#00f' : g.color;
-        // 鬼身體
+    ghosts.forEach(g => {
+        let blue = frightenedTimer > 0;
+        let flicker = blue && frightenedTimer < 120 && globalTimer % 20 < 10;
+        ctx.fillStyle = flicker ? '#ffffff' : blue ? '#4444ff' : g.color;
+        // 身體
         ctx.beginPath();
-        ctx.arc(g.x*TILE + TILE/2, g.y*TILE + TILE/2, TILE/2, Math.PI, 0, false);
+        ctx.arc(g.x*TILE, g.y*TILE + TILE*0.2, TILE*0.9, Math.PI, 0);
         ctx.lineTo(g.x*TILE + TILE, g.y*TILE + TILE);
-        ctx.lineTo(g.x*TILE + TILE*0.75, g.y*TILE + TILE*0.7);
-        ctx.lineTo(g.x*TILE + TILE*0.5, g.y*TILE + TILE);
-        ctx.lineTo(g.x*TILE + TILE*0.25, g.y*TILE + TILE*0.7);
-        ctx.lineTo(g.x*TILE, g.y*TILE + TILE);
-        ctx.lineTo(g.x*TILE, g.y*TILE + TILE/2);
+        for(let i=0; i<3; i++) ctx.lineTo(g.x*TILE + TILE*(0.25 + i*0.25), g.y*TILE + TILE*0.85);
+        ctx.lineTo(g.x*TILE, g.y*TILE + TILE*0.2);
         ctx.fill();
         // 眼睛
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(g.x*TILE + TILE*0.35, g.y*TILE + TILE*0.4, TILE*0.15,0,Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(g.x*TILE + TILE*0.65, g.y*TILE + TILE*0.4, TILE*0.15,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#00f';
-        ctx.beginPath(); ctx.arc(g.x*TILE + TILE*0.35 + g.dir%2*3, g.y*TILE + TILE*0.4, TILE*0.07,0,Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(g.x*TILE + TILE*0.65 + g.dir%2*3, g.y*TILE + TILE*0.4, TILE*0.07,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = blue && flicker ? '#ff0000' : '#ffffff';
+        ctx.fillRect(g.x*TILE + 2, g.y*TILE -1, 4, 4);
+        ctx.fillRect(g.x*TILE + 6, g.y*TILE -1, 4, 4);
+        ctx.fillStyle = '#000000';
+        let ex = g.dir === 0 ? 1 : g.dir === 2 ? -1 : 0;
+        ctx.fillRect(g.x*TILE + 3 + ex, g.y*TILE + 0.5, 2, 2);
+        ctx.fillRect(g.x*TILE + 7 + ex, g.y*TILE + 0.5, 2, 2);
     });
 }
 
-function move() {
-    // Pacman 移動
-    if(pacman.dir !== pacman.nextDir){
-        let [dx,dy] = dirs[pacman.nextDir];
-        if(map[pacman.y+dy] && map[pacman.y+dy][pacman.x+dx] !== 1) pacman.dir = pacman.nextDir;
+function getGhostTarget(g) {
+    if(frightenedTimer > 0) return null;
+    if(modeTimer === 0) return g.scatter; // scatter
+    let px = pacman.x, py = pacman.y, pd = pacman.dir;
+    let tx = px, ty = py;
+    if(g.name === 'Pinky') {
+        tx += dirs[pd][0]*4; ty += dirs[pd][1]*4;
+    } else if(g.name === 'Inky') {
+        let b = ghosts[0];
+        tx = b.x + (px + dirs[pd][0]*2 - b.x)*2;
+        ty = b.y + (py + dirs[pd][1]*2 - b.y)*2;
+    } else if(g.name === 'Clyde') {
+        let dist = Math.hypot(px - g.x, py - g.y);
+        if(dist > 8) {} else return g.scatter;
     }
-    let [dx,dy] = dirs[pacman.dir];
-    if(map[pacman.y+dy] && map[pacman.y+dy][pacman.x+dx] !== 1){
-        pacman.x += dx; pacman.y += dy;
-        if(pacman.x < 0) pacman.x = 27;
-        if(pacman.x > 27) pacman.x = 0;
+    return {x:tx, y:ty};
+}
+
+function moveGhost(g) {
+    let speed = frightenedTimer > 0 ? 0.075 : g.elroy ? 0.12 + g.elroy*0.02 : 0.09;
+    if(globalTimer % Math.floor(1/speed) !== 0) return;
+    let cx = Math.floor(g.x), cy = Math.floor(g.y);
+    let possibleDirs = [];
+    for(let d=0; d<4; d++) {
+        if(d === (g.dir + 2) % 4) continue; // no reverse
+        let nx = cx + dirs[d][0]*10, ny = cy + dirs[d][1]*10;
+        if(map[Math.floor(ny)]?.[Math.floor(nx)] !== 1) possibleDirs.push(d);
     }
+    if(!possibleDirs.length) return;
+    let target = getGhostTarget(g);
+    let bestDir = possibleDirs[0], bestDist = Infinity;
+    for(let d of possibleDirs) {
+        let nx = g.x + dirs[d][0], ny = g.y + dirs[d][1];
+        let dist = target ? Math.hypot(nx - target.x, ny - target.y) : Infinity;
+        if(dist < bestDist) {
+            bestDist = dist;
+            bestDir = d;
+        }
+    }
+    g.dir = bestDir;
+    g.x += dirs[g.dir][0];
+    g.y += dirs[g.dir][1];
+    if(g.x < 0) g.x = WIDTH;
+    if(g.x > WIDTH) g.x = 0;
+}
+
+function movePacman() {
+    let speed = frightenedTimer > 0 ? 0.11 : level <= 2 ? 0.1 : 0.12;
+    if(globalTimer % Math.floor(1/speed) !== 0) return;
+    if(pacman.dir !== pacman.nextDir) {
+        let testDir = pacman.nextDir;
+        let nx = pacman.x + dirs[testDir][0], ny = pacman.y + dirs[testDir][1];
+        if(map[Math.floor(ny)]?.[Math.floor(nx)] !== 1) pacman.dir = testDir;
+    }
+    let nx = pacman.x + dirs[pacman.dir][0], ny = pacman.y + dirs[pacman.dir][1];
+    if(map[Math.floor(ny)]?.[Math.floor(nx)] !== 1) {
+        pacman.x = nx;
+        pacman.y = ny;
+    }
+    if(pacman.x < 0) pacman.x = WIDTH;
+    if(pacman.x > WIDTH) pacman.x = 0;
+    pacman.mouth = 1 - pacman.mouth;
+}
+
+function update() {
+    globalTimer++;
+    movePacman();
+    ghosts.forEach(moveGhost);
 
     // 吃豆
-    if(map[pacman.y][pacman.x] === 2){
-        map[pacman.y][pacman.x] = 0;
-        score += 10;
-        dots--;
-    }
-    if(map[pacman.y][pacman.x] === 3){
-        map[pacman.y][pacman.x] = 0;
-        score += 50;
-        powerMode = 400; // 約8秒
-    }
+    let px = Math.floor(pacman.x), py = Math.floor(pacman.y);
+    if(map[py][px] === 2) { map[py][px] = 0; score += 10; dotsLeft--; }
+    if(map[py][px] === 3) { map[py][px] = 0; score += 50; frightenedTimer = 480; } // 8s
 
-    // 鬼移動（超簡AI）
-    ghosts.forEach(g=>{
-        if(Math.random()<0.05 || map[g.y + dirs[g.dir][1]]?.[g.x + dirs[g.dir][0]] === 1){
-            let possible = dirs.map((d,i)=> ({d,i})).filter(({d})=> map[g.y+d[1]]?.[g.x+d[0]] !== 1);
-            let choice = possible[Math.floor(Math.random()*possible.length)];
-            g.dir = choice.i;
-        }
-        g.x += dirs[g.dir][0];
-        g.y += dirs[g.dir][1];
-        if(g.x < 0) g.x = 27;
-        if(g.x > 27) g.x = 0;
-    });
+    // 加命
+    if(score >= 10000 && lives === 3) { lives++; document.getElementById('lives').innerHTML = '❤'.repeat(lives); }
 
-    // 碰撞檢測
-    ghosts.forEach(g=>{
-        if(Math.abs(g.x - pacman.x)<0.8 && Math.abs(g.y - pacman.y)<0.8){
-            if(powerMode>0){
+    // 模式切換 (簡化Lv1: 7/20/7/20/5...)
+    let modeTimes = [420,1200,420,1200,300,1200,300]; // s*60
+    if(--modeTimeLeft <= 0) {
+        modeTimer = 1 - modeTimer;
+        modeTimeLeft = modeTimes[Math.min(level-1, modeTimes.length-1)] || 60;
+    }
+    if(frightenedTimer > 0) frightenedTimer--;
+
+    // Elroy (Blinky加速)
+    let elroyThresh = level === 1 ? 20 : level <= 4 ? 30 : 0;
+    if(dotsLeft <= elroyThresh && !ghosts[0].elroy) ghosts[0].elroy = 1;
+
+    // 碰撞
+    ghosts.forEach(g => {
+        if(Math.hypot(g.x - pacman.x, g.y - pacman.y) < 0.6) {
+            if(frightenedTimer > 0) {
                 score += 200;
-                g.x = 13; g.y = 14; // 回老家
+                g.x = 13.5; g.y = 14; g.elroy = 0;
             } else {
                 lives--;
                 document.getElementById('lives').innerHTML = '❤'.repeat(lives);
-                pacman.x=14; pacman.y=23;
-                if(lives<=0) gameOver();
+                if(lives <= 0) gameOver();
+                else resetAll();
             }
         }
     });
 
-    if(powerMode>0) powerMode--;
-    if(dots===0) { alert('你太強了！全圖吃光！'); location.reload(); }
+    if(dotsLeft <= 0) nextLevel();
 
-    pacman.mouth = !pacman.mouth;
+    // 256殺屏
+    if(level >= 256) { alert('殺屏！恭喜到達傳說境界！'); gameOver(); }
 }
 
-function loop() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+function resetAll() {
+    pacman = {x:13.5, y:23, dir:0, nextDir:0, mouth:0};
+    ghosts = [
+        {name:"Blinky", x:13.5, y:11, dir:2, color:"#f84", scatter:{x:25,y:-2}, elroy:0 },
+        {name:"Pinky",  x:13.5, y:14, dir:0, color:"#ffb8ff", scatter:{x:2,y:31} },
+        {name:"Inky",   x:11.5, y:14, dir:0, color:"#00ffff", scatter:{x:27,y:-2} },
+        {name:"Clyde",  x:15.5, y:14, dir:0, color:"#ffb852", scatter:{x:0,y:31} }
+    ];
+    frightenedTimer = 0;
+}
+
+function nextLevel() {
+    level++;
+    document.getElementById('level').innerText = `關卡 ${level}`;
+    resetMap();
+    resetAll();
+    modeTimeLeft = 420;
+    modeTimer = 0;
+}
+
+function resetMap() {
+    map = rawMap.map(row => row.split('').map(c => +c));
+    dotsLeft = 0;
+    map.forEach(row => row.forEach(cell => { if(cell === 2 || cell === 3) dotsLeft++; }));
+}
+
+function gameLoop() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,WIDTH*TILE,HEIGHT*TILE);
     drawMap();
     drawGhosts();
     drawPacman();
-    document.getElementById('score').innerHTML = '分數: ' + score;
-    if(gameRunning) move();
-    requestAnimationFrame(loop);
+    document.getElementById('score').innerText = score;
+    document.getElementById('hiscore').innerText = hiscore;
+    if(gameRunning) update();
+    requestAnimationFrame(gameLoop);
 }
 
 function startGame() {
-    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('start').style.display = 'none';
     gameRunning = true;
-    // 計算總豆子數
-    map.forEach(row=>row.forEach(v=>{if(v===2||v===3) dots++;}));
+    resetMap();
+    resetAll();
+    document.getElementById('lives').innerHTML = '❤'.repeat(lives);
+    if(score > hiscore) { hiscore = score; localStorage.setItem('pacHiscore', score); }
 }
-
-// 鍵盤控制
-document.addEventListener('keydown', e=>{
-    if(e.key==='ArrowRight' || e.key==='d') pacman.nextDir = 0;
-    if(e.key==='ArrowUp'    || e.key==='w') pacman.nextDir = 1;
-    if(e.key==='ArrowLeft'  || e.key==='a') pacman.nextDir = 2;
-    if(e.key==='ArrowDown'  || e.key==='s') pacman.nextDir = 3;
-});
-
-// 手機觸控（滑動方向）
-let touchStartX, touchStartY;
-canvas.addEventListener('touchstart', e=>{
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    e.preventDefault();
-}, {passive:false});
-canvas.addEventListener('touchmove', e=>{
-    if(!touchStartX) return;
-    let dx = e.touches[0].clientX - touchStartX;
-    let dy = e.touches[0].clientY - touchStartY;
-    if(Math.abs(dx)>30 || Math.abs(dy)>30){
-        if(Math.abs(dx)>Math.abs(dy)){
-            pacman.nextDir = dx>0 ? 0 : 2;
-        } else {
-            pacman.nextDir = dy>0 ? 3 : 1;
-        }
-        touchStartX = null;
-    }
-    e.preventDefault();
-}, {passive:false});
 
 function gameOver() {
     gameRunning = false;
-    document.getElementById('final-score').innerHTML = score;
-    document.getElementById('game-over').style.display = 'flex';
+    if(score > hiscore) { hiscore = score; localStorage.setItem('pacHiscore', score); }
+    document.getElementById('final').innerText = score;
+    document.getElementById('over').style.display = 'flex';
 }
 
-loop();
+// 控制
+document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === 'd') pacman.nextDir = 0;
+    if(e.key === 'ArrowUp' || e.key === 'w') pacman.nextDir = 1;
+    if(e.key === 'ArrowLeft' || e.key === 'a') pacman.nextDir = 2;
+    if(e.key === 'ArrowDown' || e.key === 's') pacman.nextDir = 3;
+});
+document.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+let touchStart = {x:0,y:0};
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    let dx = e.touches[0].clientX - touchStart.x;
+    let dy = e.touches[0].clientY - touchStart.y;
+    if(Math.abs(dx) > Math.abs(dy)) pacman.nextDir = dx > 0 ? 0 : 2;
+    else pacman.nextDir = dy > 0 ? 3 : 1;
+}, {passive:false});
+
+gameLoop();
 </script>
 </body>
 </html>
