@@ -8,8 +8,14 @@
 
 <script>
 try{
-localStorage.getItem("name");}
-catch{ window.close();}
+if (localStorage.getItem("name")=="John Doe"){alert("已登入");}
+else{
+  alert("未登入"); 
+  window.close();}}
+catch{ 
+  alert("未登入"); 
+  window.close();
+}
 function show() {
   document.getElementById("box").hidden = false;
 }
