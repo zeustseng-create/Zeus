@@ -9,6 +9,7 @@ function dd(){
 let nickname = prompt("input password");
 if (nickname=="P@ssw0rd"){
 alert("登入成功");
+localStorage.setItem("name", "John Doe");
 window.location.href = "https://zeustseng-create.github.io/Zeus/test1.html";
 }
 else{
@@ -19,6 +20,7 @@ function c(){
   const selectElement = document.getElementById('fuck').value;
   if (selectElement=="audi"){
     alert("登入成功");
+    localStorage.setItem("name", "John Doe");
     window.location.href = "https://zeustseng-create.github.io/Zeus/test1.html";
   }
   else{
