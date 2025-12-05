@@ -7,6 +7,9 @@
 <button onclick="show()" style="width:140px;height:140px;font-size: 30px;">顯示</button>
 
 <script>
+try{
+localStorage.getItem("name");}
+catch{ window.close();}
 function show() {
   document.getElementById("box").hidden = false;
 }
