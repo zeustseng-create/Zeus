@@ -11,11 +11,11 @@ try{
 if (localStorage.getItem("name")=="John Doe"){alert("已登入");}
 else{
   alert("未登入"); 
-  window.open('', '_self', '');
-  window.close();}}
+  window.location.href = "https://zeustseng-create.github.io/Zeus/test2.html";
 catch{ 
   alert("未登入"); 
-  window.close();
+  window.location.href = "https://zeustseng-create.github.io/Zeus/test2.html";
+
 }
 function show() {
   document.getElementById("box").hidden = false;
