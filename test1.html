@@ -1,4 +1,5 @@
 <html>
+<!-- document.getElementById("msg").value;查詢id值 -->
 <head>
 </head>
 <title>zeustest and zeusno.1</title>
@@ -25,6 +26,9 @@ function show() {
 what's your name. input down.<br>
 </p>
 <input name="fuck">
+<button onclick="kk">
+查詢是否有此人
+</button>
 <br>
 <button onclick="button()" style="width:140px;height:140px;font-size: 30px;">
 mom top here
@@ -34,6 +38,10 @@ mom top here
 dad top here
 </button>
 <script>
+  function kk(){
+    if (document.getElementById("msg").value=="jane"){
+      alert("i love you");}
+    else{alert("hallo",document.getElementById("fuck").value);}}
   function button(){
     alert("i love you");
   }
