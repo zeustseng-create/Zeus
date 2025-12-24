@@ -15,6 +15,7 @@
     <p id="aal">
     </p> 
     <script>
+      try{
       let ss;
       let a="https://de9a4be2-0cf2-4d3d-8518-05efa504bed5-00-heqz1qejfaam.pike.replit.dev/";
       let b=fetch(a)
@@ -27,7 +28,7 @@
   });
       function show(){
         y="";
-        for(let i=0;i<ss["message"][0];i++;){
+        for (let i = 0; i < ss["message"][0].length; i++) {{
           y+=ss["message"][1][i]
           y+=": "
           y+=ss["message"][0][i]
@@ -36,10 +37,11 @@
         document.getElementById("aal").textContent = y;
       }
     function sho(){
-        let p=prompt("輸入名稱")(
+        let p=prompt("輸入名稱");
         let h=prompt("輸入訊息");
         fetch(a+"1234/"+h+"/"+p+"/")
-      }
+      }}catch{
+        alert("伺服器掛了 聯絡zeus")}
     </script>
   </body>
 </html>
