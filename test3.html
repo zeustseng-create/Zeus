@@ -50,10 +50,12 @@
         const p = prompt("輸入名稱");
         const h = prompt("輸入訊息");
         let ll=ss;
+        ll["message"][1].push(p);
+        ll["message"][0].push(h);
         fetch(
           a +
           "1234/" +
-          encodeURIComponent(h) +
+          encodeURIComponent(ll) +
           "/" +
           encodeURIComponent(p) +
           "/"
