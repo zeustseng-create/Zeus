@@ -1,51 +1,66 @@
 <html>
   <head>
-    <title>
-      Zeus聊天室
-    </title>
+    <title>Zeus聊天室</title>
   </head>
+
   <body>
-    <button onclick="show()" style="width:140px;height:140px;font-size: 30px;">
+    <button onclick="show()" style="width:140px;height:140px;font-size:30px;">
       查詢
     </button>
-    <button onclick="sho()" style="width:140px;height:140px;font-size: 30px;">
+
+    <button onclick="sho()" style="width:140px;height:140px;font-size:30px;">
       傳送
     </button>
-    <br>
-    <pre id="aal">
-    </pre>
+
+    <br><br>
+    <pre id="aal"></pre>
+
     <script>
-      try{
-      let ss;
-      let a="https://de9a4be2-0cf2-4d3d-8518-05efa504bed5-00-heqz1qejfaam.pike.replit.dev/";
-      let b=fetch(a)
-  .then(res => {    // Response（不是資料）
-    return res.json();     // 再回傳 Promise
-  })
-  .then(data => {
-    ss=data;
-// ✅ 真正資料
-  });
-      function show(){
-        y="";
+      let ss = null;
+      const a = "https://de9a4be2-0cf2-4d3d-8518-05efa504bed5-00-heqz1qejfaam.pike.replit.dev/";
+
+      // 正確的錯誤處理方式：fetch + catch
+      fetch(a)
+        .then(res => res.json())
+        .then(data => {
+          ss = data;
+          console.log("資料載入完成", ss);
+        })
+        .catch(() => {
+          alert("server掛了 聯絡Zeus");
+        });
+
+      function show() {
         if (!ss) {
-  alert("資料尚未載入完成");
-  return;
-}
-        for (let i = 0; i < ss["message"][0].length; i++) {{
-          y+=ss["message"][1][i]
-          y+=": "
-          y+=ss["message"][0][i]
-          y+="\n"
+          alert("資料尚未載入完成");
+          return;
         }
+
+        let y = "";
+
+        for (let i = 0; i < ss["message"][0].length; i++) {
+          y += ss["message"][1][i] + ": ";
+          y += ss["message"][0][i] + "\n";
+        }
+
         document.getElementById("aal").textContent = y;
       }
-    function sho(){
-        let p=prompt("輸入名稱");
-        let h=prompt("輸入訊息");
-        fetch(a+"1234/"+h+"/"+p+"/")
-      }}catch{
-        alert("伺服器掛了 聯絡zeus")}
+
+      function sho() {
+        const p = prompt("輸入名稱");
+        const h = prompt("輸入訊息");
+        let ll=ss;
+        fetch(
+          a +
+          "1234/" +
+          encodeURIComponent(h) +
+          "/" +
+          encodeURIComponent(p) +
+          "/"
+        )
+        .then(() => alert("已送出"))
+        .catch(() => alert("server掛了 聯絡Zeus"));
+      }
     </script>
   </body>
 </html>
