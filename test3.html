@@ -12,8 +12,8 @@
       傳送
     </button>
     <br>
-    <p id="aal">
-    </p> 
+    <pre id="aal">
+    </pre>
     <script>
       try{
       let ss;
@@ -28,6 +28,10 @@
   });
       function show(){
         y="";
+        if (!ss) {
+  alert("資料尚未載入完成");
+  return;
+}
         for (let i = 0; i < ss["message"][0].length; i++) {{
           y+=ss["message"][1][i]
           y+=": "
