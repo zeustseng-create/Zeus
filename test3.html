@@ -1,6 +1,8 @@
+<!DOCTYPE html>
 <html>
   <head>
-    <title>Zeus聊天室</title>
+    <meta charset="utf-8">
+    <title>Zeus 聊天室</title>
   </head>
 
   <body>
@@ -16,53 +18,62 @@
     <pre id="aal"></pre>
 
     <script>
-      let ss = null;
-      const a = "https://de9a4be2-0cf2-4d3d-8518-05efa504bed5-00-heqz1qejfaam.pike.replit.dev/";
+      // ===== 基本設定 =====
+      const API =
+        "https://de9a4be2-0cf2-4d3d-8518-05efa504bed5-00-heqz1qejfaam.pike.replit.dev/";
 
-      // 正確的錯誤處理方式：fetch + catch
-      fetch(a)
-        .then(res => res.json())
-        .then(data => {
-          ss = data;
-          console.log("資料載入完成", ss);
-        })
-        .catch(() => {
-          alert("server掛了 聯絡Zeus");
-        });
-
+      // ===== 顯示聊天室 =====
       function show() {
-        if (!ss) {
-          alert("資料尚未載入完成");
-          return;
-        }
+        fetch(API)
+          .then(res => res.json())
+          .then(ss => {
+            let y = "";
 
-        let y = "";
+            // ss.message[0] = 訊息
+            // ss.message[1] = 名稱
+            for (let i = 0; i < ss.message[0].length; i++) {
+              y += ss.message[1][i] + ": ";
+              y += ss.message[0][i] + "\n";
+            }
 
-        for (let i = 0; i < ss["message"][0].length; i++) {
-          y += ss["message"][1][i] + ": ";
-          y += ss["message"][0][i] + "\n";
-        }
-
-        document.getElementById("aal").textContent = y;
+            document.getElementById("aal").textContent = y;
+          })
+          .catch(() => {
+            alert("server 掛了，聯絡 Zeus");
+          });
       }
 
+      // ===== 傳送訊息（照 server 要求：整包 ss） =====
       function sho() {
-        const p = prompt("輸入名稱");
-        const h = prompt("輸入訊息");
-        let ll=ss;
-        ll["message"][1].push(p);
-        ll["message"][0].push(h);
-        fetch(
-          a +
-          "1234/" +
-          encodeURIComponent(ll) +
-          "/" +
-          encodeURIComponent(p) +
-          "/"
-        )
-        .then(() => alert("已送出"))
-        .catch(() => alert("server掛了 聯絡Zeus"));
+        fetch(API)
+          .then(res => res.json())
+          .then(ss => {
+            const p = prompt("輸入名稱");
+            if (!p) return;
+
+            const h = prompt("輸入訊息");
+            if (!h) return;
+
+            // ✅ 照你說的：直接改整包資料
+            ss.message[1].push(p);
+            ss.message[0].push(h);
+
+            // ✅ 關鍵修正：物件 → JSON → URL encode
+            const payload = encodeURIComponent(JSON.stringify(ss));
+
+            return fetch(API + "1234/" + payload + "/");
+          })
+          .then(() => {
+            alert("已送出");
+            show(); // 傳送完直接刷新
+          })
+          .catch(() => {
+            alert("server 掛了，聯絡 Zeus");
+          });
       }
+
+      // 頁面一開先顯示一次
+      show();
     </script>
   </body>
 </html>
