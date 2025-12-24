@@ -5,6 +5,21 @@
     </title>
   </head>
   <body>
-    
+    <button onclick="show()" style="width:140px;height:140px;font-size: 30px;">
+      查詢
+    </button>
+    <button onclick="sho()" style="width:140px;height:140px;font-size: 30px;">
+      傳送
+    </button>
+    <br>
+    <p id="aal">
+    </p> 
+    <script>
+      
+      function show(){
+        let s=fetch(
+        document.getElementById("aal").textContent = "新的文字";
+      }
+    </script>
   </body>
 </html>
