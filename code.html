@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>多語言程式編輯器</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/lib/codemirror.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/theme/dracula.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background:#282a36; color:white;}
+    #controls { padding: 10px; background:#444; display:flex; align-items:center; gap:10px; }
+    select, button { font-size:16px; padding:5px;}
+    #editor { height: 80vh; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label>語言: 
+      <select id="lang">
+        <option value="py">Python</option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+        <option value="cs">C#</option>
+        <option value="js">JavaScript</option>
+        <option value="go">Go</option>
+        <option value="r">R</option>
+        <option value="rust">Rust</option>
+        <option value="swift">Swift</option>
+        <option value="boo">Boo</option>
+        <option value="abm">ABM</option>
+        <option value="html">HTML</option>
+      </select>
+    </label>
+    <button onclick="downloadCode()">下載程式碼</button>
+  </div>
+
+  <textarea id="editor">print("Hello World")</textarea>
+
+  <!-- CodeMirror -->
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/lib/codemirror.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/python/python.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/javascript/javascript.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/clike/clike.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/r/r.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/htmlmixed/htmlmixed.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/go/go.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/rust/rust.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/swift/swift.js"></script>
+  <!-- 其他語言可以依需要再加 -->
+
+  <script>
+    // 初始化編輯器
+    const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      lineNumbers: true,
+      theme: "dracula",
+      mode: "python",
+      tabSize: 4,
+      indentUnit: 4,
+      indentWithTabs: true
+    });
+
+    // 語言對應 CodeMirror mode
+    const langMap = {
+      py: "python",
+      c: "text/x-csrc",
+      cpp: "text/x-c++src",
+      java: "text/x-java",
+      cs: "text/x-csharp",
+      js: "javascript",
+      go: "go",
+      r: "r",
+      rust: "rust",
+      swift: "swift",
+      boo: "text/plain",
+      abm: "text/plain",
+      html: "htmlmixed"
+    };
+
+    // 語言選擇切換
+    document.getElementById("lang").addEventListener("change", (e)=>{
+      const mode = langMap[e.target.value] || "text/plain";
+      editor.setOption("mode", mode);
+    });
+
+    // 下載程式碼
+    function downloadCode() {
+      const code = editor.getValue();
+      const lang = document.getElementById("lang").value;
+      const blob = new Blob([code], {type: "text/plain"});
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "code." + lang;
+      link.click();
+    }
+  </script>
+</body>
+</html>
