@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/theme/dracula.css">
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background:#282a36; color:white;}
-    #controls { padding: 10px; background:#444; display:flex; align-items:center; gap:10px; }
+    #controls { padding: 10px; background:#444; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     select, button { font-size:16px; padding:5px;}
     #editor { height: 80vh; }
   </style>
@@ -22,6 +22,7 @@
         <option value="java">Java</option>
         <option value="cs">C#</option>
         <option value="js">JavaScript</option>
+        <option value="ts">TypeScript</option>
         <option value="go">Go</option>
         <option value="r">R</option>
         <option value="rust">Rust</option>
@@ -29,6 +30,23 @@
         <option value="boo">Boo</option>
         <option value="abm">ABM</option>
         <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="php">PHP</option>
+        <option value="perl">Perl</option>
+        <option value="lua">Lua</option>
+        <option value="kotlin">Kotlin</option>
+        <option value="scala">Scala</option>
+        <option value="haskell">Haskell</option>
+        <option value="julia">Julia</option>
+        <option value="sh">Shell</option>
+        <option value="sql">SQL</option>
+        <option value="dart">Dart</option>
+        <option value="matlab">Matlab</option>
+        <option value="fortran">Fortran</option>
+        <option value="objc">Objective-C</option>
+        <option value="elixir">Elixir</option>
+        <option value="erlang">Erlang</option>
+        <option value="ruby">Ruby</option>
       </select>
     </label>
     <button onclick="downloadCode()">下載程式碼</button>
@@ -43,13 +61,15 @@
   <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/clike/clike.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/r/r.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/htmlmixed/htmlmixed.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/go/go.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/rust/rust.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/swift/swift.js"></script>
-  <!-- 其他語言可以依需要再加 -->
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/css/css.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/php/php.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/perl/perl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/lua/lua.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/shell/shell.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.7/mode/sql/sql.js"></script>
+  <!-- 其他語言未提供 CodeMirror mode 就用 text/plain -->
 
   <script>
-    // 初始化編輯器
     const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
       lineNumbers: true,
       theme: "dracula",
@@ -59,7 +79,6 @@
       indentWithTabs: true
     });
 
-    // 語言對應 CodeMirror mode
     const langMap = {
       py: "python",
       c: "text/x-csrc",
@@ -67,22 +86,38 @@
       java: "text/x-java",
       cs: "text/x-csharp",
       js: "javascript",
+      ts: "javascript",
       go: "go",
       r: "r",
       rust: "rust",
       swift: "swift",
       boo: "text/plain",
       abm: "text/plain",
-      html: "htmlmixed"
+      html: "htmlmixed",
+      css: "css",
+      php: "php",
+      perl: "perl",
+      lua: "lua",
+      kotlin: "text/plain",
+      scala: "text/plain",
+      haskell: "text/plain",
+      julia: "text/plain",
+      sh: "shell",
+      sql: "sql",
+      dart: "text/plain",
+      matlab: "text/plain",
+      fortran: "text/plain",
+      objc: "text/plain",
+      elixir: "text/plain",
+      erlang: "text/plain",
+      ruby: "text/x-ruby"
     };
 
-    // 語言選擇切換
     document.getElementById("lang").addEventListener("change", (e)=>{
       const mode = langMap[e.target.value] || "text/plain";
       editor.setOption("mode", mode);
     });
 
-    // 下載程式碼
     function downloadCode() {
       const code = editor.getValue();
       const lang = document.getElementById("lang").value;
