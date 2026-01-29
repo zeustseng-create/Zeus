@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>多語言前端執行器 + Go WASM</title>
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@6.0.1/dist/codemirror.min.css">
+<script src="https://cdn.jsdelivr.net/npm/codemirror@6.0.1/dist/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-python"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-ruby"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-wast"></script>
+
+<!-- Python -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+<!-- Ruby -->
+<script src="https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@latest/dist/browser.umd.js"></script>
+<!-- Go WASM 執行支援 -->
+<script src="wasm_exec.js"></script>
+
+<style>
+body { font-family: monospace; background:#0f172a; color:#e5e7eb; padding:20px; }
+button, select { padding:6px; margin:5px 0; cursor:pointer; }
+#editor { height:250px; border:1px solid #334155; }
+pre { background:#020617; border:1px solid #334155; padding:10px; min-height:120px; margin-top:10px; white-space:pre-wrap; }
+.tip { margin-top:20px; font-size:14px; color:#93c5fd; }
+.tip button { margin-left:10px; padding:3px 6px; font-size:12px; }
+</style>
+</head>
+<body>
+
+<h2>🌐 多語言前端執行器 + Go WASM</h2>
+
+<select id="lang" onchange="changeLang()">
+  <option value="js">JavaScript</option>
+  <option value="python">Python</option>
+  <option value="ruby">Ruby</option>
+  <option value="asm">Assembly (WASM)</option>
+  <option value="go">Go WASM</option>
+</select>
+
+<button onclick="run()">▶ 執行</button>
+<button onclick="downloadCode()">💾 下載程式碼</button>
+
+<div id="editor"></div>
+<pre id="output"></pre>
+
+<div class="tip">
+💖 打賞支持我：<br>
+BTC: <b id="btc">bc1xxxxxxx</b> <button onclick="copyText('btc')">複製</button><br>
+SOL: <b id="sol">SOLxxxxxxxxx</b> <button onclick="copyText('sol')">複製</button><br>
+Lightning: <b id="ln">lnbc1xxxxxxx</b> <button onclick="copyText('ln')">複製</button>
+</div>
+
+<script>
+let editor, pyodide;
+let goInstance = new Go();  // Go WASM helper
+
+async function initPy(){ pyodide=await loadPyodide(); }
+initPy();
+
+const examples = {
+js:`let s=0;\nfor(let i=1;i<=10;i++) s+=i;\nconsole.log("總和 =",s);`,
+python:`s=0\nfor i in range(1,11):\n s+=i\nprint("總和 =",s)`,
+ruby:`sum=0\n(1..10).each{|i| sum+=i}\nputs "總和 = #{sum}"`,
+asm:`(module\n (func $run (result i32)\n i32.const 1\n i32.const 2\n i32.add\n i32.const 3\n i32.mul)\n (export "run"(func $run)))`,
+go:`package main\nimport "fmt"\nfunc main(){\nsum:=0\nfor i:=1;i<=10;i++{sum+=i}\nfmt.Println("總和 =",sum)\n}`
+};
+
+function changeLang(){
+  const lang=document.getElementById("lang").value;
+  let extension;
+  switch(lang){
+    case "js": extension=window.javascript(); break;
+    case "python": extension=window.python(); break;
+    case "ruby": extension=window.ruby(); break;
+    case "asm": extension=window.wast(); break;
+    case "go": extension=window.javascript(); break; // Go 編輯器用 JS 高亮
+  }
+  if(editor) editor.destroy();
+  editor = new CodeMirror.EditorView({
+    doc: examples[lang],
+    extensions:[extension],
+    parent:document.getElementById("editor")
+  });
+  document.getElementById("output").textContent="";
+}
+changeLang();
+
+/* ========= 執行器 ========= */
+async function run(){
+  const lang=document.getElementById("lang").value;
+  const code=editor.state.doc.toString();
+  const out=document.getElementById("output");
+  out.textContent="";
+
+  const wrapOutput=(text)=>{ out.textContent+=text+"\n"; }
+
+  if(lang==="js"){
+    const oldLog=console.log;
+    console.log=(...args)=>wrapOutput(args.join(" "));
+    try{ new Function(code)(); } catch(e){ wrapOutput(e.message); }
+    console.log=oldLog;
+  }
+
+  if(lang==="python"){
+    try{ await pyodide.runPythonAsync(code); } catch(e){ wrapOutput(e); }
+  }
+
+  if(lang==="ruby"){
+    const {DefaultRubyVM}=window.RubyWasm;
+    const vm=await DefaultRubyVM();
+    vm.print=text=>wrapOutput(text);
+    vm.eval(code);
+  }
+
+  if(lang==="asm"){
+    try{
+      const bytes=new TextEncoder().encode(code);
+      const mod=await WebAssembly.compile(bytes);
+      const inst=await WebAssembly.instantiate(mod);
+      wrapOutput("結果 = "+inst.exports.run());
+    }catch(e){ wrapOutput("Assembly 錯誤："+e.message);}
+  }
+
+  if(lang==="go"){
+    try{
+      // Go WASM 需要 main.wasm 和 wasm_exec.js 同目錄
+      const resp = await fetch("main.wasm");
+      const buffer = await resp.arrayBuffer();
+      const result = await WebAssembly.instantiate(buffer, goInstance.importObject);
+      goInstance.run(result.instance);
+      wrapOutput("Go 程式執行完畢（請查看 console）");
+    }catch(e){ wrapOutput("Go WASM 錯誤："+e.message);}
+  }
+}
+
+/* ========= 下載程式碼 ========= */
+function downloadCode(){
+  const lang=document.getElementById("lang").value;
+  const code=editor.state.doc.toString();
+  let ext;
+  switch(lang){ case "js":ext=".js"; break; case "python":ext=".py"; break; case "ruby":ext=".rb"; break; case "asm":ext=".wat"; break; case "go":ext=".go"; break;}
+  const blob=new Blob([code],{type:"text/plain"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="code"+ext;
+  a.click();
+}
+
+/* ========= 打賞複製 ========= */
+function copyText(id){
+  const text=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text);
+  alert("已複製: "+text);
+}
+</script>
+
+</body>
+</html>
