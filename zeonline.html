@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>ZeOnline 可編輯/執行程式碼</title>
+<title>ZeOnline 完整可編輯程式碼</title>
 
 <!-- CodeMirror 6 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@6.0.1/dist/codemirror.min.css">
@@ -22,7 +22,7 @@
 <style>
 body { font-family: monospace; background:#0f172a; color:#e5e7eb; padding:20px; }
 button, select { padding:6px; margin:5px 0; cursor:pointer; }
-#editor { height:250px; border:1px solid #888; }
+#editor { height:300px; border:1px solid #888; margin-top:15px; }
 pre { background:#020617; border:1px solid #334155; padding:10px; min-height:120px; margin-top:10px; white-space:pre-wrap; }
 .tip { margin-top:20px; font-size:14px; color:#93c5fd; }
 .tip button { margin-left:10px; padding:3px 6px; font-size:12px; }
@@ -30,9 +30,9 @@ pre { background:#020617; border:1px solid #334155; padding:10px; min-height:120
 </head>
 <body>
 
-<h2>🌐 多語言前端執行器</h2>
+<h2>🌐 多語言前端執行器 + Go WASM</h2>
 
-JavaScript Python Ruby Assembly(WASM) Go ▶ 執行 下載程式碼
+JavaScript Python Ruby Assembly (WASM) Go ▶ 執行 下載程式碼
 
 <!-- 程式碼區 -->
 <div id="editor"></div>
@@ -43,6 +43,7 @@ JavaScript Python Ruby Assembly(WASM) Go ▶ 執行 下載程式碼
 💖 打賞支持我：<br>
 BTC: bc1qrgul4zpppscp0q5gmvx4ugtxpzkd6yulefrjpm <button onclick="copyText('btc')">複製</button><br>
 SOL: FfttT4mcpfi6rERqV7ziBoUNCQUEWaeRq4jcTKSgAFbC <button onclick="copyText('sol')">複製</button><br>
+Lightning: lnbc1xxxxxxx <button onclick="copyText('ln')">複製</button>
 </div>
 
 <select id="lang" onchange="changeLang()">
