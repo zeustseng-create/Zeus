@@ -2,11 +2,11 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>ZeOnline</title>
+<title>ZeOnline 可編輯+執行程式碼</title>
 
-<!-- CodeMirror -->
+<!-- CodeMirror 6 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@6.0.1/dist/codemirror.min.css">
-<script src="https://cdn.jsdelivr.net/npm/codemirror@6.0.1/dist/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/basic-setup"></script>
 <script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-javascript"></script>
 <script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-python"></script>
 <script src="https://cdn.jsdelivr.net/npm/@codemirror/lang-ruby"></script>
@@ -16,13 +16,13 @@
 <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 <!-- Ruby -->
 <script src="https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@latest/dist/browser.umd.js"></script>
-<!-- Go WASM 執行支援 -->
+<!-- Go WASM helper -->
 <script src="wasm_exec.js"></script>
 
 <style>
 body { font-family: monospace; background:#0f172a; color:#e5e7eb; padding:20px; }
 button, select { padding:6px; margin:5px 0; cursor:pointer; }
-#editor { height:250px; border:1px solid #334155; }
+#editor { height:250px; border:1px solid #888; }
 pre { background:#020617; border:1px solid #334155; padding:10px; min-height:120px; margin-top:10px; white-space:pre-wrap; }
 .tip { margin-top:20px; font-size:14px; color:#93c5fd; }
 .tip button { margin-left:10px; padding:3px 6px; font-size:12px; }
@@ -32,88 +32,92 @@ pre { background:#020617; border:1px solid #334155; padding:10px; min-height:120
 
 <h2>🌐 多語言前端執行器 + Go WASM</h2>
 
+JavaScript Python Ruby Assembly (WASM) Go ▶ 執行 下載程式碼
+
+<!-- 程式碼區 -->
+<div id="editor"></div>
+<pre id="output"></pre>
+
+<!-- 打賞區 -->
+<div class="tip">
+💖 打賞支持我：<br>
+BTC: bc1qrgul4zpppscp0q5gmvx4ugtxpzkd6yulefrjpm <button onclick="copyText('btc')">複製</button><br>
+SOL: FfttT4mcpfi6rERqV7ziBoUNCQUEWaeRq4jcTKSgAFbC <button onclick="copyText('sol')">複製</button><br>
+Lightning: lnbc1xxxxxxx <button onclick="copyText('ln')">複製</button>
+</div>
+
 <select id="lang" onchange="changeLang()">
   <option value="js">JavaScript</option>
   <option value="python">Python</option>
   <option value="ruby">Ruby</option>
   <option value="asm">Assembly (WASM)</option>
-  <option value="go">Go</option>
+  <option value="go">Go WASM</option>
 </select>
 
 <button onclick="run()">▶ 執行</button>
 <button onclick="downloadCode()">💾 下載程式碼</button>
 
-<div id="editor"></div>
-<pre id="output"></pre>
-
-<div class="tip">
-💖 打賞支持我：<br>
-BTC: <b id="btc">bc1qrgul4zpppscp0q5gmvx4ugtxpzkd6yulefrjpm</b> <button onclick="copyText('btc')">複製</button><br>
-SOL: <b id="sol">FfttT4mcpfi6rERqV7ziBoUNCQUEWaeRq4jcTKSgAFbC</b> <button onclick="copyText('sol')">複製</button><br>
-</div>
-
 <script>
-let editor, pyodide;
-let goInstance = new Go();  // Go WASM helper
+let editor, pyodide, goInstance = new Go();
 
+// 初始化 Pyodide
 async function initPy(){ pyodide=await loadPyodide(); }
 initPy();
 
+// 範例程式碼
 const examples = {
-js:`let s=0;\nfor(let i=1;i<=10;i++) s+=i;\nconsole.log("總和 =",s);`,
-python:`s=0\nfor i in range(1,11):\n s+=i\nprint("總和 =",s)`,
-ruby:`sum=0\n(1..10).each{|i| sum+=i}\nputs "總和 = #{sum}"`,
-asm:`(module\n (func $run (result i32)\n i32.const 1\n i32.const 2\n i32.add\n i32.const 3\n i32.mul)\n (export "run"(func $run)))`,
-go:`package main\nimport "fmt"\nfunc main(){\nsum:=0\nfor i:=1;i<=10;i++{sum+=i}\nfmt.Println("總和 =",sum)\n}`
+js:`console.log("Hello JS")`,
+python:`print("Hello Python")`,
+ruby:`puts "Hello Ruby"`,
+asm:`(module (func $run (result i32) i32.const 42) (export "run" (func $run)))`,
+go:`package main\nimport "fmt"\nfunc main(){fmt.Println("Hello Go")}`
 };
 
+// 切換語言
 function changeLang(){
   const lang=document.getElementById("lang").value;
   let extension;
   switch(lang){
-    case "js": extension=window.javascript(); break;
-    case "python": extension=window.python(); break;
-    case "ruby": extension=window.ruby(); break;
-    case "asm": extension=window.wast(); break;
-    case "go": extension=window.javascript(); break; // Go 編輯器用 JS 高亮
+    case "js": extension=javascript(); break;
+    case "python": extension=python(); break;
+    case "ruby": extension=ruby(); break;
+    case "asm": extension=wast(); break;
+    case "go": extension=javascript(); break; // 高亮用 JS
   }
+
   if(editor) editor.destroy();
   editor = new CodeMirror.EditorView({
     doc: examples[lang],
-    extensions:[extension],
+    extensions:[basicSetup, extension],
     parent:document.getElementById("editor")
   });
   document.getElementById("output").textContent="";
 }
 changeLang();
 
-/* ========= 執行器 ========= */
+// 執行程式碼
 async function run(){
   const lang=document.getElementById("lang").value;
   const code=editor.state.doc.toString();
   const out=document.getElementById("output");
   out.textContent="";
-
   const wrapOutput=(text)=>{ out.textContent+=text+"\n"; }
 
   if(lang==="js"){
     const oldLog=console.log;
     console.log=(...args)=>wrapOutput(args.join(" "));
-    try{ new Function(code)(); } catch(e){ wrapOutput(e.message); }
+    try{ new Function(code)(); }catch(e){ wrapOutput(e.message);}
     console.log=oldLog;
   }
-
   if(lang==="python"){
-    try{ await pyodide.runPythonAsync(code); } catch(e){ wrapOutput(e); }
+    try{ await pyodide.runPythonAsync(code); }catch(e){ wrapOutput(e);}
   }
-
   if(lang==="ruby"){
     const {DefaultRubyVM}=window.RubyWasm;
     const vm=await DefaultRubyVM();
     vm.print=text=>wrapOutput(text);
     vm.eval(code);
   }
-
   if(lang==="asm"){
     try{
       const bytes=new TextEncoder().encode(code);
@@ -122,10 +126,8 @@ async function run(){
       wrapOutput("結果 = "+inst.exports.run());
     }catch(e){ wrapOutput("Assembly 錯誤："+e.message);}
   }
-
   if(lang==="go"){
     try{
-      // Go WASM 需要 main.wasm 和 wasm_exec.js 同目錄
       const resp = await fetch("main.wasm");
       const buffer = await resp.arrayBuffer();
       const result = await WebAssembly.instantiate(buffer, goInstance.importObject);
@@ -135,7 +137,7 @@ async function run(){
   }
 }
 
-/* ========= 下載程式碼 ========= */
+// 下載程式碼
 function downloadCode(){
   const lang=document.getElementById("lang").value;
   const code=editor.state.doc.toString();
@@ -148,9 +150,12 @@ function downloadCode(){
   a.click();
 }
 
-/* ========= 打賞複製 ========= */
+// 打賞複製
 function copyText(id){
-  const text=document.getElementById(id).textContent;
+  let text="";
+  if(id==="btc") text="bc1qrgul4zpppscp0q5gmvx4ugtxpzkd6yulefrjpm";
+  if(id==="sol") text="FfttT4mcpfi6rERqV7ziBoUNCQUEWaeRq4jcTKSgAFbC";
+  if(id==="ln") text="lnbc1xxxxxxx";
   navigator.clipboard.writeText(text);
   alert("已複製: "+text);
 }
