@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>網頁挖礦測試 - Kylacoin (KCN) Flex Algo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f0f1a; color: #e0e0ff; text-align: center; padding: 40px 20px; }
+    h1 { color: #00ffcc; } /* 青色 KCN 風格 */
+    #status, #balance { font-size: 1.3rem; margin: 30px 0; padding: 15px; background: #1a1a2e; border-radius: 12px; max-width: 600px; margin: 30px auto; }
+    button { padding: 14px 32px; font-size: 1.1rem; margin: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; }
+    button.start { background: #00ffcc; }
+    button.start:hover { background: #33ffdd; }
+    button.stop { background: #ff4a4a; }
+    button.stop:hover { background: #ff5a5a; }
+    button.balance { background: #ffaa00; }
+    button.balance:hover { background: #ffbb33; }
+    #hashrate { font-weight: bold; color: #ffff00; }
+    .note { margin-top: 40px; opacity: 0.8; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <h1>網頁挖礦測試 - Kylacoin (KCN) Flex</h1>
+  
+  <div id="status">
+    目前狀態：未開始<br>
+    算力：0 H/s
+  </div>
+
+  <div id="balance">
+    KCN 餘額：未查詢（用 explorer 查）
+  </div>
+
+  <button class="start" onclick="startMining()">開始挖 KCN</button>
+  <button class="stop" onclick="stopMining()">停止挖礦</button>
+  <button class="balance" onclick="checkBalance()">查詢餘額（explorer）</button>
+
+  <p class="note">
+    ※ 網頁挖礦收益極低（普通電腦一天可能不到 0.001 KCN）<br>
+    ※ 使用 crypto-webminer Flex algo，支持 Kylacoin<br>
+    ※ 你的地址：0x0AABE9b3257b87e1eb2cEa3438a38587fcee3665 （BEP-20? 建議用主網地址）<br>
+    ※ 礦池 payout 用主網地址較好；查餘額去 https://kcnxp.com/address/你的地址
+  </p>
+
+  <!-- crypto-webminer 腳本（支援 Flex） -->
+  <script src="https://www.crypto-webminer.com/lib.js"></script>
+
+  <script>
+    let miner = null;
+    const wallet = "0x0AABE9b3257b87e1eb2cEa3438a38587fcee3665";  // 你的 KCN 地址（如果 BEP-20；否則換主網 kc... 或 CV...）
+    const worker = "web-" + Math.random().toString(36).slice(2,8);
+
+    function startMining() {
+      if (miner) return alert("已在挖礦中！");
+
+      // crypto-webminer 設定：Flex algo for Kylacoin
+      // server 用 MoneroOcean (自動最賺，或切 Flex) 或自訂 pool
+      miner = new CryptoWebMiner({
+        server: "wss://webminer.moneroocean.stream:443",  // 或用 zergpool / cedric-crispin 的 wss 如果有
+        user: wallet + "." + worker,
+        pass: "x",
+        algo: "flex",  // 關鍵：指定 Flex algo
+        throttle: 0.2,  // 20% CPU 限制，避免過熱
+        onHashRate: function(hashRate) {
+          document.getElementById("status").innerHTML = 
+            `挖礦中 (Flex algo)<br>算力：${hashRate.toFixed(2)} H/s`;
+        },
+        onError: function(err) {
+          document.getElementById("status").innerHTML += "<br>錯誤：" + err;
+        }
+      });
+
+      miner.start();
+      document.getElementById("status").innerHTML = "連線礦池中... (Kylacoin Flex)";
+    }
+
+    function stopMining() {
+      if (miner) {
+        miner.stop();
+        miner = null;
+        document.getElementById("status").innerHTML = "已停止<br>算力：0 H/s";
+      }
+    }
+
+    function checkBalance() {
+      alert("請手動去 Kylacoin Explorer 查詢餘額：\nhttps://kcnxp.com/address/" + wallet + "\n（如果 BEP-20，用 BSC explorer 如 bscscan.com）");
+      // 如果有 API，可加 fetch，但 Kylacoin explorer 無公開簡單 API
+    }
+
+    window.addEventListener('beforeunload', () => { if (miner) miner.stop(); });
+  </script>
+
+</body>
+</html>
