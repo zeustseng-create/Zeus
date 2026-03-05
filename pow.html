@@ -2,235 +2,186 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>接龍 Solitaire</title>
-
+<title>完整 Klondike 接龍 Solitaire</title>
 <style>
-
-body{
-    margin:0;
-    background:#0b6623;
-    font-family:sans-serif;
-    color:white;
-    text-align:center;
-}
-
-h1{
-    margin:10px;
-}
-
-#board{
-    display:flex;
-    justify-content:center;
-    margin-top:20px;
-}
-
-.column{
-    width:90px;
-    min-height:120px;
-    margin:5px;
-    border-radius:8px;
-}
-
-.card{
-    width:80px;
-    height:110px;
-    background:white;
-    border-radius:8px;
-    border:1px solid #000;
-    position:relative;
-    margin-top:-80px;
-    cursor:grab;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    font-size:20px;
-}
-
-.column .card:first-child{
-    margin-top:0;
-}
-
-.red{
-    color:red;
-}
-
-button{
-    padding:8px 15px;
-    font-size:16px;
-}
-
+body{margin:0;background:#0b6623;font-family:sans-serif;color:white;text-align:center;}
+h1{margin:10px;}
+#game{display:flex;flex-wrap:wrap;justify-content:center;margin-top:20px;}
+.pile{width:90px;min-height:120px;margin:5px;border-radius:8px;position:relative;}
+.card{width:80px;height:110px;background:white;border-radius:8px;border:1px solid #000;
+position:absolute;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:20px;
+cursor:grab;user-select:none;transition: top 0.2s, left 0.2s;}
+.red{color:red;}
+button{padding:8px 15px;font-size:16px;margin-bottom:10px;}
+#stock,#waste{margin-top:20px;}
 </style>
 </head>
-
 <body>
-
-<h1>撲克牌接龍</h1>
-
+<h1>完整 Klondike 接龍 Solitaire</h1>
 <button onclick="startGame()">重新開始</button>
-
-<div id="board"></div>
-
+<div id="game"></div>
 <script>
-
 const suits=["♠","♥","♦","♣"];
-let deck=[];
-let columns=[];
-let selected=null;
+let deck=[], tableau=[], foundations=[], stock=[], waste=[];
+let dragged=null, offsetX=0, offsetY=0, dragSource=null;
 
 function createDeck(){
-
-deck=[];
-
-for(let s of suits){
-
-for(let v=1;v<=13;v++){
-
-deck.push({suit:s,value:v});
-
+    deck=[];
+    for(let s of suits) for(let v=1;v<=13;v++) deck.push({suit:s,value:v});
 }
-
-}
-
-}
-
-function shuffle(){
-
-for(let i=deck.length-1;i>0;i--){
-
-let j=Math.floor(Math.random()*(i+1));
-
-[deck[i],deck[j]]=[deck[j],deck[i]];
-
-}
-
-}
-
-function cardName(v){
-
-if(v==1) return "A";
-if(v==11) return "J";
-if(v==12) return "Q";
-if(v==13) return "K";
-
-return v;
-
-}
-
-function cardColor(s){
-
-if(s=="♥"||s=="♦") return "red";
-return "black";
-
-}
-
+function shuffle(){for(let i=deck.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}}
+function cardName(v){return v==1?"A":v==11?"J":v==12?"Q":v==13?"K":v;}
+function cardColor(s){return (s=="♥"||s=="♦")?"red":"black";}
 function createCardElement(card){
-
-let div=document.createElement("div");
-
-div.className="card";
-
-if(cardColor(card.suit)=="red"){
-div.classList.add("red");
+    let div=document.createElement("div");
+    div.className="card";
+    if(cardColor(card.suit)=="red") div.classList.add("red");
+    div.innerText=cardName(card.value)+card.suit;
+    div.cardData=card;
+    div.draggable=false;
+    div.style.zIndex=1;
+    div.addEventListener("mousedown", e=>{
+        dragged=div;
+        dragSource=div.parentElement;
+        offsetX=e.offsetX; offsetY=e.offsetY;
+        div.style.zIndex=100;
+    });
+    return div;
 }
-
-div.innerText=cardName(card.value)+card.suit;
-
-div.draggable=true;
-
-div.cardData=card;
-
-div.addEventListener("dragstart",()=>{
-selected=div;
-});
-
-return div;
-
-}
-
 function startGame(){
-
-createDeck();
-shuffle();
-
-let board=document.getElementById("board");
-
-board.innerHTML="";
-
-columns=[];
-
-for(let i=0;i<7;i++){
-
-let col=document.createElement("div");
-col.className="column";
-
-col.addEventListener("dragover",(e)=>{
-e.preventDefault();
+    createDeck(); shuffle();
+    tableau=[]; foundations=[]; stock=[]; waste=[];
+    const game=document.getElementById("game");
+    game.innerHTML="";
+    // 7 列
+    for(let i=0;i<7;i++){
+        let pile=document.createElement("div");
+        pile.className="pile";
+        pile.dataset.index=i;
+        game.appendChild(pile);
+        tableau.push([]);
+        for(let j=0;j<=i;j++){
+            let card=deck.pop();
+            tableau[i].push(card);
+            let el=createCardElement(card);
+            el.style.top=(j*30)+"px";
+            pile.appendChild(el);
+        }
+    }
+    // 基礎堆 (4個)
+    for(let i=0;i<4;i++){
+        let f=document.createElement("div");
+        f.className="pile";
+        f.dataset.foundation=i;
+        f.style.top="0px";
+        game.appendChild(f);
+        foundations.push([]);
+    }
+    // 庫存堆
+    while(deck.length) stock.push(deck.pop());
+    renderStock(game);
+}
+function renderStock(game){
+    let stockDiv=document.createElement("div");
+    stockDiv.className="pile";
+    stockDiv.id="stock";
+    game.appendChild(stockDiv);
+    if(stock.length){
+        let c=createCardElement(stock[stock.length-1]);
+        stockDiv.appendChild(c);
+        c.addEventListener("click",()=>drawCard());
+    }
+    let wasteDiv=document.createElement("div");
+    wasteDiv.className="pile";
+    wasteDiv.id="waste";
+    game.appendChild(wasteDiv);
+}
+function drawCard(){
+    if(stock.length==0){stock=waste.reverse();waste=[];updateStockWaste();return;}
+    waste.push(stock.pop());
+    updateStockWaste();
+}
+function updateStockWaste(){
+    const stockDiv=document.getElementById("stock");
+    stockDiv.innerHTML="";
+    if(stock.length){
+        let c=createCardElement(stock[stock.length-1]);
+        stockDiv.appendChild(c);
+        c.addEventListener("click",()=>drawCard());
+    }
+    const wasteDiv=document.getElementById("waste");
+    wasteDiv.innerHTML="";
+    if(waste.length){
+        let c=createCardElement(waste[waste.length-1]);
+        wasteDiv.appendChild(c);
+        c.addEventListener("mousedown", e=>{
+            dragged=c;
+            dragSource=wasteDiv;
+            offsetX=e.offsetX; offsetY=e.offsetY;
+            c.style.zIndex=100;
+        });
+    }
+}
+document.addEventListener("mousemove", e=>{
+    if(dragged){
+        dragged.style.position="absolute";
+        dragged.style.left=(e.pageX-offsetX)+"px";
+        dragged.style.top=(e.pageY-offsetY)+"px";
+    }
 });
-
-col.addEventListener("drop",()=>{
-moveCard(col);
+document.addEventListener("mouseup", e=>{
+    if(dragged){
+        let dropped=false;
+        document.querySelectorAll(".pile").forEach(pile=>{
+            let rect=pile.getBoundingClientRect();
+            if(e.clientX>rect.left && e.clientX<rect.right && e.clientY>rect.top && e.clientY<rect.bottom){
+                handleDrop(pile);
+                dropped=true;
+            }
+        });
+        if(!dropped){resetDragged();}
+        dragged.style.zIndex=1;
+        dragged=null; dragSource=null;
+        checkWin();
+    }
 });
-
-board.appendChild(col);
-
-columns.push(col);
-
+function handleDrop(pile){
+    let card=dragged.cardData;
+    if(pile.dataset.foundation!==undefined){
+        let idx=pile.dataset.foundation;
+        if((foundations[idx].length==0 && card.value==1) || 
+           (foundations[idx].length>0 && foundations[idx][foundations[idx].length-1].suit==card.suit && foundations[idx][foundations[idx].length-1].value==card.value-1)){
+            if(dragSource==document.getElementById("waste")) waste.pop();
+            pile.appendChild(dragged);
+            foundations[idx].push(card);
+            return;
+        }
+    } else if(pile.dataset.index!==undefined){
+        let idx=pile.dataset.index;
+        let col=tableau[idx];
+        let last=col[col.length-1];
+        if(col.length==0 && card.value==13 || 
+           (col.length>0 && cardColor(card.suit)!=cardColor(last.suit) && card.value==last.value-1)){
+            if(dragSource==document.getElementById("waste")) waste.pop();
+            else dragSource.removeChild(dragged);
+            col.push(card);
+            dragged.style.top=((col.length-1)*30)+"px";
+            pile.appendChild(dragged);
+        } else {resetDragged();}
+    } else {resetDragged();}
 }
-
-for(let i=0;i<7;i++){
-
-for(let j=0;j<=i;j++){
-
-let card=deck.pop();
-
-let el=createCardElement(card);
-
-columns[i].appendChild(el);
-
+function resetDragged(){
+    if(dragged){
+        if(dragSource) dragSource.appendChild(dragged);
+        dragged.style.position="absolute";
+        dragged.style.top=dragged.style.top;
+        dragged.style.left=dragged.style.left;
+    }
 }
-
+function checkWin(){
+    if(foundations.every(f=>f.length==13)) alert("你贏了！");
 }
-
-}
-
-function moveCard(col){
-
-if(!selected) return;
-
-let card=selected.cardData;
-
-let target=col.lastElementChild;
-
-if(!target){
-
-if(card.value==13){
-col.appendChild(selected);
-}
-
-selected=null;
-return;
-
-}
-
-let t=target.cardData;
-
-let color1=cardColor(card.suit);
-let color2=cardColor(t.suit);
-
-if(color1!=color2 && card.value==t.value-1){
-
-col.appendChild(selected);
-
-}
-
-selected=null;
-
-}
-
 startGame();
-
 </script>
-
 </body>
 </html>
