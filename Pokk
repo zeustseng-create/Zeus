@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>接龍 Solitaire</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#0b6623;
+    font-family:sans-serif;
+    color:white;
+    text-align:center;
+}
+
+h1{
+    margin:10px;
+}
+
+#board{
+    display:flex;
+    justify-content:center;
+    margin-top:20px;
+}
+
+.column{
+    width:90px;
+    min-height:120px;
+    margin:5px;
+    border-radius:8px;
+}
+
+.card{
+    width:80px;
+    height:110px;
+    background:white;
+    border-radius:8px;
+    border:1px solid #000;
+    position:relative;
+    margin-top:-80px;
+    cursor:grab;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:20px;
+}
+
+.column .card:first-child{
+    margin-top:0;
+}
+
+.red{
+    color:red;
+}
+
+button{
+    padding:8px 15px;
+    font-size:16px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>撲克牌接龍</h1>
+
+<button onclick="startGame()">重新開始</button>
+
+<div id="board"></div>
+
+<script>
+
+const suits=["♠","♥","♦","♣"];
+let deck=[];
+let columns=[];
+let selected=null;
+
+function createDeck(){
+
+deck=[];
+
+for(let s of suits){
+
+for(let v=1;v<=13;v++){
+
+deck.push({suit:s,value:v});
+
+}
+
+}
+
+}
+
+function shuffle(){
+
+for(let i=deck.length-1;i>0;i--){
+
+let j=Math.floor(Math.random()*(i+1));
+
+[deck[i],deck[j]]=[deck[j],deck[i]];
+
+}
+
+}
+
+function cardName(v){
+
+if(v==1) return "A";
+if(v==11) return "J";
+if(v==12) return "Q";
+if(v==13) return "K";
+
+return v;
+
+}
+
+function cardColor(s){
+
+if(s=="♥"||s=="♦") return "red";
+return "black";
+
+}
+
+function createCardElement(card){
+
+let div=document.createElement("div");
+
+div.className="card";
+
+if(cardColor(card.suit)=="red"){
+div.classList.add("red");
+}
+
+div.innerText=cardName(card.value)+card.suit;
+
+div.draggable=true;
+
+div.cardData=card;
+
+div.addEventListener("dragstart",()=>{
+selected=div;
+});
+
+return div;
+
+}
+
+function startGame(){
+
+createDeck();
+shuffle();
+
+let board=document.getElementById("board");
+
+board.innerHTML="";
+
+columns=[];
+
+for(let i=0;i<7;i++){
+
+let col=document.createElement("div");
+col.className="column";
+
+col.addEventListener("dragover",(e)=>{
+e.preventDefault();
+});
+
+col.addEventListener("drop",()=>{
+moveCard(col);
+});
+
+board.appendChild(col);
+
+columns.push(col);
+
+}
+
+for(let i=0;i<7;i++){
+
+for(let j=0;j<=i;j++){
+
+let card=deck.pop();
+
+let el=createCardElement(card);
+
+columns[i].appendChild(el);
+
+}
+
+}
+
+}
+
+function moveCard(col){
+
+if(!selected) return;
+
+let card=selected.cardData;
+
+let target=col.lastElementChild;
+
+if(!target){
+
+if(card.value==13){
+col.appendChild(selected);
+}
+
+selected=null;
+return;
+
+}
+
+let t=target.cardData;
+
+let color1=cardColor(card.suit);
+let color2=cardColor(t.suit);
+
+if(color1!=color2 && card.value==t.value-1){
+
+col.appendChild(selected);
+
+}
+
+selected=null;
+
+}
+
+startGame();
+
+</script>
+
+</body>
+</html>
