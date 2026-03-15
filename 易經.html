@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>易經銅錢占卜 - 輪流翻動</title>
+<style>
+body{
+  font-family:Arial;
+  text-align:center;
+  background:#f5f5f5;
+}
+
+.coin{
+  font-size:60px;
+  margin:10px;
+  display:inline-block;
+}
+
+button{
+  font-size:20px;
+  padding:10px 20px;
+  margin:10px;
+}
+
+#result{
+  font-size:24px;
+  margin-top:20px;
+}
+
+#lineResult{
+  font-size:30px;
+  margin:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>易經銅錢占卜（輪流翻動）</h1>
+<p>每一顆錢輪流翻動，感覺到了就按「停」</p>
+
+<div id="coins">
+<span class="coin" id="c1">正</span>
+<span class="coin" id="c2">正</span>
+<span class="coin" id="c3">正</span>
+</div>
+
+<br>
+
+<button onclick="stopCoin()">停</button>
+<button onclick="nextLine()">下一爻</button>
+
+<div id="lineResult"></div>
+
+<h3>卦象</h3>
+<div id="result"></div>
+
+<script>
+let coins=["正","反"];
+let intervals=[null,null,null];
+let lines=[];
+let currentCoin=0; // 目前翻動的錢
+
+function startFlipCoin(index){
+  intervals[index]=setInterval(()=>{
+    let r=Math.floor(Math.random()*2);
+    document.getElementById("c"+(index+1)).innerText=coins[r];
+  },100);
+}
+
+// 開始翻第一顆錢
+startFlipCoin(currentCoin);
+
+function stopCoin(){
+  clearInterval(intervals[currentCoin]);
+  currentCoin++;
+  if(currentCoin<3){
+    startFlipCoin(currentCoin);
+  } else {
+    // 三顆錢停下，計算本爻
+    let heads=0;
+    for(let i=0;i<3;i++){
+      if(document.getElementById("c"+(i+1)).innerText=="正") heads++;
+    }
+
+    let value,type,line;
+    if(heads==3){value=9; type="老陽"; line="━━━ (變)";}
+    if(heads==2){value=7; type="少陽"; line="━━━";}
+    if(heads==1){value=8; type="少陰"; line="━ ━";}
+    if(heads==0){value=6; type="老陰"; line="━ ━ (變)";}
+
+    document.getElementById("lineResult").innerText="本爻："+type+" "+value;
+    lines.push(line);
+    currentCoin=0; // 重置下一爻
+  }
+}
+
+function nextLine(){
+  if(lines.length==6){
+    alert("已完成六爻");
+    return;
+  }
+  document.getElementById("result").innerHTML=lines.slice().reverse().join("<br>");
+  document.getElementById("lineResult").innerText="";
+  startFlipCoin(currentCoin);
+}
+</script>
+
+</body>
+</html>
