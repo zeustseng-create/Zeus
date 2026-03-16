@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>輪流銅錢六爻占卜器</title>
+<title>正確輪流銅錢六爻占卜器</title>
 <style>
 body{font-family:sans-serif;text-align:center;}
 button{font-size:18px;padding:8px 20px;margin:5px;}
@@ -17,7 +17,7 @@ td,th{border:1px solid black;padding:8px;}
 </head>
 <body>
 
-<h1>輪流銅錢六爻占卜器</h1>
+<h1>正確輪流銅錢六爻占卜器</h1>
 
 <div id="coinArea">
   <div id="c0">━ ━</div>
@@ -57,13 +57,13 @@ let lines = [];
 let original = [];
 let changed = [];
 
-// 銅錢動畫
-let coins = [0,0,0];
-let intervals = [null,null,null];
+// 銅錢動畫控制
+let coins = [0,0,0]; // 0=反=2, 1=正=3
 let currentCoin = 0;
+let interval = null;
 const coinSymbols = ["━ ━","━━━"];
 
-// 64卦對照（簡化，可自行擴充完整64卦）
+// 64卦對照（簡化示例，可擴充完整64卦）
 const hexagrams = {
 '111111':'乾','000000':'坤','010000':'師','111000':'泰','000111':'否',
 '100101':'坎','101001':'離','000101':'臨','100111':'隨','010101':'井',
@@ -73,9 +73,9 @@ const hexagrams = {
 // 開始翻當前銅錢
 function startCoinAnimation(){
   if(currentCoin>=3) return;
-  intervals[currentCoin]=setInterval(()=>{
-    coins[currentCoin]=Math.floor(Math.random()*2);
-    document.getElementById("c"+currentCoin).innerText=coinSymbols[coins[currentCoin]];
+  interval = setInterval(()=>{
+    coins[currentCoin] = Math.random()<0.5?2:3;
+    document.getElementById("c"+currentCoin).innerText = coins[currentCoin]==3?"━━━":"━ ━";
   },10);
   document.getElementById("status").innerText="翻動第 "+(currentCoin+1)+" 枚銅錢...";
 }
@@ -83,33 +83,30 @@ function startCoinAnimation(){
 // 停止當前銅錢並進入下一枚
 function stopCoinAnimation(){
   if(currentCoin>=3) return;
-  clearInterval(intervals[currentCoin]);
+  clearInterval(interval);
   currentCoin++;
   if(currentCoin<3){
     document.getElementById("status").innerText="點「開始翻銅錢」翻下一枚";
   } else {
-    // 三枚完成 → 生成本爻和變爻
-    let sum = coins.reduce((a,b)=>a+b)+3; // 陰=2,陽=3
+    // 三枚完成 → 計算本爻和變爻
+    let sum = coins.reduce((a,b)=>a+b); // 6~9
     lines.push(sum);
 
-    // 本爻
-    let o = (sum==7 || sum==9)?1:0;
-    // 變爻
+    let o = (sum==7 || sum==9)?1:0; // 陽=1, 陰=0
     let c;
-    if(sum==6) c=1;
-    else if(sum==9) c=0;
-    else c=o;
+    if(sum==6) c=1; // 老陰變陽
+    else if(sum==9) c=0; // 老陽變陰
+    else c=o; // 少陽少陰不變
 
     original.push(o);
     changed.push(c);
 
-    // 每爻生成即時畫卦
     drawHexagram("original", original);
     drawHexagram("changed", changed);
 
     document.getElementById("status").innerText="第 "+lines.length+" 爻："+sum;
 
-    currentCoin=0;
+    currentCoin = 0;
 
     if(lines.length==6){
       showHexagramName();
@@ -119,14 +116,14 @@ function stopCoinAnimation(){
 
 // 畫卦
 function drawHexagram(id,data){
-  let html="";
+  let html = "";
   for(let i=data.length-1;i>=0;i--){
-    html+=data[i]? "<div class='yang'></div>":"<div class='yin'></div>";
+    html += data[i]? "<div class='yang'></div>":"<div class='yin'></div>";
   }
-  document.getElementById(id).innerHTML=html;
+  document.getElementById(id).innerHTML = html;
 }
 
-// 六爻完成 → 顯示卦名
+// 顯示卦名
 function showHexagramName(){
   let binaryStr = original.join('');
   let changedStr = changed.join('');
