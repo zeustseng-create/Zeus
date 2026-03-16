@@ -1,205 +1,223 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>易經占卜器 - 保留卦象與變卦</title>
+<meta charset="UTF-8">
+<title>易經占卜</title>
+
 <style>
-body{ font-family:Arial; text-align:center; background:#f5f5f5; }
-.coin{ font-size:60px; margin:10px; display:inline-block; }
-button{ font-size:20px; padding:10px 20px; margin:10px; }
-#lineResult{ font-size:28px; margin:10px; }
-#guaResult{ font-size:22px; margin-top:20px; }
-.guaLine{ font-size:30px; }
+
+body{
+font-family:sans-serif;
+text-align:center;
+}
+
+button{
+font-size:20px;
+padding:10px 20px;
+margin:10px;
+}
+
+.yang{
+width:120px;
+height:10px;
+background:black;
+margin:6px auto;
+}
+
+.yin{
+width:120px;
+height:10px;
+margin:6px auto;
+position:relative;
+}
+
+.yin:before{
+content:"";
+width:50px;
+height:10px;
+background:black;
+position:absolute;
+left:0;
+}
+
+.yin:after{
+content:"";
+width:50px;
+height:10px;
+background:black;
+position:absolute;
+right:0;
+}
+
+table{
+margin:auto;
+margin-top:30px;
+font-size:18px;
+border-collapse:collapse;
+}
+
+td,th{
+border:1px solid black;
+padding:8px;
+}
+
 </style>
+
 </head>
 <body>
-<h1>易經占卜器</h1>
-<p>輪流翻三顆銅錢，感覺到了就按「停」</p>
 
-<div id="coins">
-<span class="coin" id="c1">正</span>
-<span class="coin" id="c2">正</span>
-<span class="coin" id="c3">正</span>
-</div>
+<h1>易經銅錢占卜</h1>
 
-<br>
-<button onclick="stopCoin()">停</button>
-<button onclick="nextLine()">下一爻</button>
+<button onclick="throwCoins()">擲銅錢</button>
 
-<div id="lineResult"></div>
-<h3>卦象</h3>
-<div id="guaResult"></div>
+<h3 id="status">請開始占卜</h3>
+
+<h2>本卦</h2>
+<div id="original"></div>
+
+<h2>變卦</h2>
+<div id="changed"></div>
 
 <script>
-// 64卦名稱與簡單卦辭
-const guaNames=["乾","坤","屯","蒙","需","訟","師","比","小畜","履","泰","否","同人","大有","謙","豫",
-"隨","蠱","臨","觀","噬嗑","賁","剝","復","無妄","大畜","頤","大過","坎","離","咸","恆",
-"遯","大壯","晉","明夷","家人","睽","蹇","解","損","益","夬","姤","萃","升","困","井",
-"革","鼎","震","艮","漸","歸妹","豐","旅","巽","兌","渙","節","中孚","小過","既濟","未濟"];
-const guaDesc=["元亨，利貞","元亨，利牝馬之貞","元亨，利涉大川","利貞，勿用有攸往","有孚，光亨，貞吉，利涉大川",
-"舉譟，無咎","貞，丈人吉，無咎","比，吉，原筮，元永貞","亨，密雲不雨，自我西郊","履虎尾，不咥人，亨",
-"泰，小往大來，吉，亨","否之匪人，不利君子貞","同人於野，亨","大有，元亨","謙，亨，君子有終",
-"豫，利建侯行師","隨，元亨，利貞，無咎","蠱，元亨，利涉大川","臨，元亨，利貞","觀，盥而不薦，有孚顯志",
-"噬嗑，亨，利用獄","賁，亨，戒慎不虧","剝，不利有攸往","復，元亨，利貞","無妄，元亨，利貞","大畜，利貞，不家食吉",
-"頤，貞吉，觀頤，自求口實","大過，棟橈","坎，習坎，入於坎窞，凶","離，利貞，亨","咸，亨，利貞，取女吉",
-"恒，亨，無咎，利貞","遯，亨，小利貞","大壯，利貞","晉，康侯用錫馬蕃庶，晉用見大人","明夷，利艱貞",
-"家人，利女貞","睽，小事吉","蹇，利西南，不利東北","解，利西南，得朋，利東北，喪朋","損，亨，利貞，勿用有攸往",
-"益，利有攸往","夬，揚于王庭，孚號有厲","姤，女壯，勿用取女","萃，亨，王假有廟","升，元亨，用見大人，勿恤，南征吉",
-"困，亨，貞，利，西南得朋，東北喪朋","井，改邑不改井，貞，利有攸往","革，元亨，利貞，悔亡","鼎，元吉",
-"震，亨，震來虩虩，笑言啞啞，震驚百里，不喪匕鬯","艮，艮其背，不獲其身，行其庭，不見其人，無咎",
-"漸，女歸吉，利貞","歸妹，元亨，利貞，佳君子吉","豐，亨，王假之","旅，小亨，旅貞吉",
-"巽，亨，小利有攸往","兌，亨，利貞","渙，亨，王假有廟","節，亨，苦節不可貞","中孚，豚魚，吉，利涉大川",
-"小過，亨，利貞，勿恤，艱則吉","既濟，亨，小利貞","未濟，亨，濟，亨小利貞"];
 
-let coins=["正","反"];
-let intervals=[null,null,null];
-let lines=[];   // 保存線條
-let types=[];   // 保存爻類型
-let currentCoin=0;
+let lines=[]
 
-// 輪流翻動
-function startFlipCoin(index){
-  intervals[index]=setInterval(()=>{
-    let r=Math.floor(Math.random()*2);
-    document.getElementById("c"+(index+1)).innerText=coins[r];
-  },10);
+function throwCoins(){
+
+if(lines.length>=6){
+alert("已完成六爻")
+return
 }
 
-startFlipCoin(currentCoin);
+let coins=[]
 
-function stopCoin(){
-  clearInterval(intervals[currentCoin]);
-  currentCoin++;
-  if(currentCoin<3){
-    startFlipCoin(currentCoin);
-  } else {
-    // 三顆停 → 計算爻
-    let heads=0;
-    for(let i=0;i<3;i++){
-      if(document.getElementById("c"+(i+1)).innerText=="正") heads++;
-    }
-    let value,type,line;
-    if(heads==3){value=9; type="老陽"; line="━━━ (變)";}
-    if(heads==2){value=7; type="少陽"; line="━━━";}
-    if(heads==1){value=8; type="少陰"; line="━ ━";}
-    if(heads==0){value=6; type="老陰"; line="━ ━ (變)"}
-    document.getElementById("lineResult").innerText="本爻："+type+" "+value;
-    lines.push(line);
-    types.push(type);
-    currentCoin=0;
-  }
+for(let i=0;i<3;i++){
+coins.push(Math.random()<0.5?2:3)
 }
 
-function nextLine(){
-  if(lines.length==6){
-    // 顯示本卦
-    let reversedLines=lines.slice().reverse();
-    let reversedTypes=types.slice().reverse();
-    let guaIndex=getGuaIndex(reversedTypes);
-    let guaName=guaNames[guaIndex];
-    let guaText=guaDesc[guaIndex];
+let sum=coins[0]+coins[1]+coins[2]
 
-    // 計算變卦
-    let newTypes=reversedTypes.map(t=>{
-      if(t=="老陽") return "陰";
-      if(t=="老陰") return "陽";
-      return t;
-    });
-    let newGuaIndex=getGuaIndex(newTypes);
-    let newGuaName=guaNames[newGuaIndex];
-    let newGuaText=guaDesc[newGuaIndex];
+lines.push(sum)
 
-    let html="<b>本卦:</b> "+guaName+"<br>"+reversedLines.join("<br>")+"<br>"+guaText;
-    html+="<br><br><b>變卦:</b> "+newGuaName+"<br>"+newTypes.map(t=>{
-      if(t=="陽") return "━━━";
-      else return "━ ━";
-    }).join("<br>")+"<br>"+newGuaText;
+document.getElementById("status").innerText=
+"第 "+lines.length+" 爻："+sum
 
-    document.getElementById("guaResult").innerHTML=html;
-    return;
-  }
-  document.getElementById("guaResult").innerHTML=lines.slice().reverse().join("<br>");
-  document.getElementById("lineResult").innerText="";
-  startFlipCoin(currentCoin);
+if(lines.length==6){
+showHexagrams()
 }
 
-// 將六爻轉成卦索引 (陽=1, 陰=0)
-function getGuaIndex(typesArr){
-  let arr=typesArr.map(t=>{
-    if(t=="少陽"||t=="老陽") return 1;
-    return 0;
-  });
-  let lower=(arr[0]<<2)|(arr[1]<<1)|arr[2];
-  let upper=(arr[3]<<2)|(arr[4]<<1)|arr[5];
-  return upper*8+lower;
 }
+
+function showHexagrams(){
+
+let original=[]
+let changed=[]
+
+for(let i=0;i<6;i++){
+
+let v=lines[i]
+
+let o
+let c
+
+// 本卦
+if(v==7 || v==9) o=1
+else o=0
+
+// 變卦
+if(v==6) c=1
+else if(v==9) c=0
+else c=o
+
+original.push(o)
+changed.push(c)
+
+}
+
+drawHexagram("original",original)
+drawHexagram("changed",changed)
+
+}
+
+function drawHexagram(id,data){
+
+let html=""
+
+for(let i=5;i>=0;i--){
+
+if(data[i]==1){
+html+="<div class='yang'></div>"
+}else{
+html+="<div class='yin'></div>"
+}
+
+}
+
+document.getElementById(id).innerHTML=html
+
+}
+
 </script>
+
 <h2>伏羲八卦參閱表</h2>
 
-<table border="1" style="margin:auto;font-size:20px">
+<table>
+
 <tr>
-<th>卦名</th>
-<th>卦象</th>
-<th>自然象徵</th>
-<th>性質</th>
+<th>卦</th>
+<th>象</th>
+<th>自然</th>
 </tr>
 
 <tr>
 <td>乾</td>
-<td>☰<br>━━━<br>━━━<br>━━━</td>
+<td>☰</td>
 <td>天</td>
-<td>剛健、創造</td>
 </tr>
 
 <tr>
 <td>坤</td>
-<td>☷<br>━ ━<br>━ ━<br>━ ━</td>
+<td>☷</td>
 <td>地</td>
-<td>順從、承載</td>
 </tr>
 
 <tr>
 <td>震</td>
-<td>☳<br>━ ━<br>━ ━<br>━━━</td>
+<td>☳</td>
 <td>雷</td>
-<td>行動、開始</td>
 </tr>
 
 <tr>
 <td>巽</td>
-<td>☴<br>━━━<br>━━━<br>━ ━</td>
+<td>☴</td>
 <td>風</td>
-<td>滲透、柔順</td>
 </tr>
 
 <tr>
 <td>坎</td>
-<td>☵<br>━ ━<br>━━━<br>━ ━</td>
+<td>☵</td>
 <td>水</td>
-<td>危險、智慧</td>
 </tr>
 
 <tr>
 <td>離</td>
-<td>☲<br>━━━<br>━ ━<br>━━━</td>
+<td>☲</td>
 <td>火</td>
-<td>光明、依附</td>
 </tr>
 
 <tr>
 <td>艮</td>
-<td>☶<br>━━━<br>━ ━<br>━ ━</td>
+<td>☶</td>
 <td>山</td>
-<td>停止、守</td>
 </tr>
 
 <tr>
 <td>兌</td>
-<td>☱<br>━ ━<br>━━━<br>━━━</td>
+<td>☱</td>
 <td>澤</td>
-<td>喜悅、交流</td>
 </tr>
 
 </table>
+
 </body>
 </html>
