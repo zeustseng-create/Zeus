@@ -2,31 +2,25 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>六爻占卜器（旋轉銅錢+正確爻）</title>
+<title>六爻占卜器（真實隨機停下）</title>
 <style>
 body{font-family:sans-serif;text-align:center;}
 button{font-size:18px;padding:8px 20px;margin:5px;}
 #coinArea{margin:20px;}
 .coin{
   display:inline-block;
-  width:60px;
-  height:60px;
+  width:60px;height:60px;
   border-radius:50%;
   border:2px solid black;
   margin:10px;
-  line-height:60px;
-  font-size:24px;
+  line-height:60px;font-size:24px;
   transform-style:preserve-3d;
-  transition: transform 0.1s linear;
+  transition: transform 0.2s;
   position:relative;
 }
-.coin .front, .coin .back{
-  position:absolute;
-  width:60px;height:60px;
-  backface-visibility:hidden;
-  text-align:center;
-  line-height:60px;
-  font-size:24px;
+.coin .front,.coin .back{
+  position:absolute;width:60px;height:60px;
+  backface-visibility:hidden;text-align:center;line-height:60px;font-size:24px;
 }
 .coin .back{transform:rotateY(180deg);}
 .yang{width:120px;height:10px;background:black;margin:6px auto;}
@@ -39,7 +33,7 @@ td,th{border:1px solid black;padding:8px;}
 </head>
 <body>
 
-<h1>六爻占卜器（旋轉銅錢+正確爻）</h1>
+<h1>六爻占卜器（真實隨機停下）</h1>
 
 <div id="coinArea">
   <div id="coin0" class="coin"><div class="front">正</div><div class="back">反</div></div>
@@ -75,39 +69,39 @@ td,th{border:1px solid black;padding:8px;}
 // 六爻數據
 let lines=[], original=[], changed=[];
 let currentCoin=0, coinInterval=null;
-let coins=[2,2,2]; // 初始都反面=2
-
-// 64卦示例
-const hexagrams={'111111':'乾','000000':'坤','010000':'師','111000':'泰','000111':'否','100101':'坎','101001':'離','000101':'臨','100111':'隨','010101':'井','101010':'困','001010':'解','011110':'巽','011101':'艮'};
 
 // 開始翻當前銅錢
 function startCoin(){
   if(currentCoin>=3) return;
   coinInterval=setInterval(()=>{
-    coins[currentCoin]=Math.random()<0.5?2:3;
     let angle=Math.random()*360;
     document.getElementById('coin'+currentCoin).style.transform='rotateY('+angle+'deg)';
   },10);
   document.getElementById('status').innerText='翻動第 '+(currentCoin+1)+' 枚銅錢...';
 }
 
-// 停止當前銅錢
+// 停止當前銅錢（真正隨機決定正反）
 function stopCoin(){
   clearInterval(coinInterval);
+
+  // 真正隨機決定正面(3)或反面(2)
+  let val = Math.random()<0.5?2:3;
+  document.getElementById('coin'+currentCoin).style.transform = val==3?'rotateY(0deg)':'rotateY(180deg)';
+
+  // 記錄
+  coins[currentCoin]=val;
+
   currentCoin++;
-  if(currentCoin<3){
-    document.getElementById('status').innerText='點「開始翻銅錢」翻下一枚';
-  } else {
+  if(currentCoin>=3){
     // 計算爻
-    let sum=coins[0]+coins[1]+coins[2];
+    let sum = coins[0]+coins[1]+coins[2];
     lines.push(sum);
-    let o=(sum==7||sum==9)?1:0;
-    let c;
-    if(sum==6)c=1; else if(sum==9)c=0; else c=o;
+    let o = (sum==7||sum==9)?1:0;
+    let c = (sum==6)?1:(sum==9?0:o);
     original.push(o); changed.push(c);
 
-    drawHex('original', original);
-    drawHex('changed', changed);
+    drawHex('original',original);
+    drawHex('changed',changed);
     document.getElementById('status').innerText='第 '+lines.length+' 爻: '+sum;
     currentCoin=0;
     if(lines.length==6) showHexName();
@@ -129,6 +123,10 @@ function showHexName(){
   let name=hexagrams[b]||'未知', name2=hexagrams[c]||'未知';
   document.getElementById('hexagramName').innerHTML='本卦: '+name+'<br>變卦: '+name2;
 }
+
+// 保存每枚銅錢的值
+let coins=[2,2,2];
+const hexagrams={'111111':'乾','000000':'坤','010000':'師','111000':'泰','000111':'否','100101':'坎','101001':'離','000101':'臨','100111':'隨','010101':'井','101010':'困','001010':'解','011110':'巽','011101':'艮'};
 </script>
 </body>
 </html>
