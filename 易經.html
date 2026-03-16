@@ -53,18 +53,21 @@ td,th{border:1px solid black;padding:8px;}
 
 <script>
 // 六爻存值
-let lines=[];
+let lines = [];
+let original = [];
+let changed = [];
 
 // 銅錢動畫
-let coins=[0,0,0];
-let intervals=[null,null,null];
-let currentCoin=0;
-const coinSymbols=["━ ━","━━━"]; // 0:陰 1:陽
+let coins = [0,0,0];
+let intervals = [null,null,null];
+let currentCoin = 0;
+const coinSymbols = ["━ ━","━━━"];
 
-// 64卦對照（簡化）
+// 64卦對照（簡化，可自行擴充完整64卦）
 const hexagrams = {
-'111111':'乾','000000':'坤','010000':'師','111000':'泰','000111':'否','100101':'坎','101001':'離',
-'000101':'臨','100111':'隨','010101':'井','101010':'困','001010':'解','011110':'巽','011101':'艮'
+'111111':'乾','000000':'坤','010000':'師','111000':'泰','000111':'否',
+'100101':'坎','101001':'離','000101':'臨','100111':'隨','010101':'井',
+'101010':'困','001010':'解','011110':'巽','011101':'艮'
 };
 
 // 開始翻當前銅錢
@@ -85,48 +88,54 @@ function stopCoinAnimation(){
   if(currentCoin<3){
     document.getElementById("status").innerText="點「開始翻銅錢」翻下一枚";
   } else {
-    // 三枚完成計算爻值
-    let sum = coins.reduce((a,b)=>a+b)+3; // 陰2,陽3
+    // 三枚完成 → 生成本爻和變爻
+    let sum = coins.reduce((a,b)=>a+b)+3; // 陰=2,陽=3
     lines.push(sum);
-    document.getElementById("status").innerText="第 "+lines.length+" 爻："+sum;
-    currentCoin=0;
-    if(lines.length==6) showHexagrams();
-  }
-}
 
-// 計算本卦與變卦
-function showHexagrams(){
-  let original=[],changed=[];
-  let binaryStr="",changedStr="";
-  for(let i=0;i<6;i++){
-    let v=lines[i];
-    let o=(v==7 || v==9)?1:0;
+    // 本爻
+    let o = (sum==7 || sum==9)?1:0;
+    // 變爻
     let c;
-    if(v==6) c=1;
-    else if(v==9) c=0;
+    if(sum==6) c=1;
+    else if(sum==9) c=0;
     else c=o;
+
     original.push(o);
     changed.push(c);
-    binaryStr+=o;
-    changedStr+=c;
-  }
-  drawHexagram("original",original);
-  drawHexagram("changed",changed);
 
-  let name=hexagrams[binaryStr]||"未知";
-  let name2=hexagrams[changedStr]||"未知";
-  document.getElementById("hexagramName").innerHTML=
-  "本卦："+name+"<br>變卦："+name2;
+    // 每爻生成即時畫卦
+    drawHexagram("original", original);
+    drawHexagram("changed", changed);
+
+    document.getElementById("status").innerText="第 "+lines.length+" 爻："+sum;
+
+    currentCoin=0;
+
+    if(lines.length==6){
+      showHexagramName();
+    }
+  }
 }
 
 // 畫卦
 function drawHexagram(id,data){
   let html="";
-  for(let i=5;i>=0;i--){
+  for(let i=data.length-1;i>=0;i--){
     html+=data[i]? "<div class='yang'></div>":"<div class='yin'></div>";
   }
   document.getElementById(id).innerHTML=html;
 }
+
+// 六爻完成 → 顯示卦名
+function showHexagramName(){
+  let binaryStr = original.join('');
+  let changedStr = changed.join('');
+  let name = hexagrams[binaryStr]||"未知";
+  let name2 = hexagrams[changedStr]||"未知";
+  document.getElementById("hexagramName").innerHTML=
+    "本卦："+name+"<br>變卦："+name2;
+}
 </script>
+
 </body>
 </html>
