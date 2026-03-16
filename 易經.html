@@ -62,7 +62,7 @@ function startFlipCoin(index){
   intervals[index]=setInterval(()=>{
     let r=Math.floor(Math.random()*2);
     document.getElementById("c"+(index+1)).innerText=coins[r];
-  },100);
+  },20);
 }
 
 startFlipCoin(currentCoin);
