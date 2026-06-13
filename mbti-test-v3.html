@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBTI 人格測驗</title>
+<style>
+  :root {
+    --bg: oklch(0.13 0.03 280);
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: oklch(0.98 0.005 280);
+    --muted: oklch(0.72 0.03 280);
+    --primary: oklch(0.62 0.22 280);
+    --accent: oklch(0.68 0.24 0);
+    --gradient: linear-gradient(135deg, var(--primary), var(--accent));
+    --shadow: 0 20px 60px -20px oklch(0.62 0.22 280 / 0.6);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 20% 10%, oklch(0.62 0.22 280 / 0.35), transparent 50%), radial-gradient(circle at 80% 90%, oklch(0.68 0.24 0 / 0.25), transparent 55%);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  h1, h2, h3 { font-family: "Space Grotesk", Inter, system-ui, sans-serif; letter-spacing: -.02em; }
+  .container { max-width: 768px; margin: 0 auto; padding: 48px 24px; }
+  .hidden { display: none !important; }
+
+  /* Intro */
+  .intro { min-height: calc(100vh - 96px); text-align: center; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .eyebrow { border:1px solid var(--border); background:var(--surface); border-radius:999px; padding:6px 16px; color:var(--muted); font-size:.75rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; }
+  .intro h1 { font-size: clamp(3rem, 8vw, 4.5rem); line-height:1.08; margin:32px 0 0; }
+  .gradient-text { background: var(--gradient); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .intro p { color: var(--muted); font-size: 1.1rem; max-width: 580px; margin: 24px auto 0; }
+  .intro-actions { margin-top:40px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .stats { margin-top:80px; width:100%; max-width:768px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .stat { padding:24px; border:1px solid var(--border); background:var(--surface); backdrop-filter:blur(20px); border-radius:16px; }
+  .stat strong { display:block; font-size:1.875rem; line-height:1; }
+  .stat span { display:block; margin-top:6px; color:var(--muted); font-size:.875rem; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 14px 36px; border-radius: 999px;
+    border: none; font-size: 1rem; font-weight: 600; cursor: pointer;
+    background: var(--gradient);
+    color: #fff; box-shadow: var(--shadow); transition: transform .2s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-ghost {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); box-shadow: none;
+  }
+
+  /* Progress */
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-top { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-bottom: 8px; }
+  .progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--gradient); border-radius: 3px; transition: width .5s ease; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    backdrop-filter: blur(12px);
+  }
+  .card .label {
+    font-size: .75rem; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .card h2 { font-size: 1.6rem; margin-top: 12px; font-weight: 600; line-height: 1.5; }
+
+  /* Options */
+  .options { margin-top: 32px; display: grid; gap: 12px; }
+  .option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-radius: 16px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+    cursor: pointer; transition: all .2s; text-align: left; width: 100%; color: var(--text);
+  }
+  .option:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); }
+  .option-title { font-size: 1.1rem; font-weight: 600; }
+  .option-sub { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+  .option-arrow { font-size: 1.4rem; color: var(--muted); transition: all .2s; }
+  .option:hover .option-arrow { color: var(--primary); transform: translateX(4px); }
+
+  /* Back */
+  .back-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: .85rem; padding: 6px 12px; border-radius: 999px; transition: background .2s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .back-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* Result */
+  .result-hero {
+    background: var(--gradient);
+    padding: 2px; border-radius: 24px; box-shadow: var(--shadow);
+  }
+  .result-hero-inner {
+    background: rgba(11,15,25,.85); border-radius: 22px; padding: 40px;
+    backdrop-filter: blur(12px);
+  }
+  .result-code { font-size: 4rem; font-weight: 800; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .result-name { font-size: 1.5rem; font-weight: 600; }
+  .result-nick { color: var(--muted); font-size: .9rem; }
+  .result-tagline { margin-top: 16px; font-size: 1.1rem; color: var(--muted); font-style: italic; }
+
+  .section { margin-top: 20px; }
+  .section h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--primary); margin-bottom: 12px; }
+  .section p { color: var(--muted); }
+  .section ul { list-style: none; padding: 0; margin: 0; }
+  .section li { display: flex; align-items: center; gap: 10px; color: var(--muted); padding: 4px 0; }
+  .section li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+  .pill { display: inline-block; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); font-size: .85rem; color: var(--muted); margin: 4px 6px 4px 0; }
+
+  .actions { margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .actions .btn { flex: 1; min-width: 140px; }
+
+  /* Types list */
+  .types-grid { display: grid; gap: 12px; }
+  .type-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px; border-radius: 16px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+    cursor: pointer; transition: all .2s; text-decoration: none; color: inherit;
+  }
+  .type-row:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); }
+  .type-code { font-size: 1.3rem; font-weight: 700; width: 56px; flex-shrink: 0; }
+  .type-info { flex: 1; }
+  .type-info .name { font-weight: 600; }
+  .type-info .nick { font-size: .85rem; color: var(--muted); }
+  .type-tagline { font-size: .85rem; color: var(--muted); font-style: italic; flex: 1; text-align: right; }
+
+  @media (max-width: 600px) {
+    .container { padding:40px 24px; }
+    .intro h1 { font-size: 3rem; }
+    .result-code { font-size: 3rem; }
+    .card { padding: 24px; }
+    .type-tagline { display: none; }
+    .stats { gap:8px; margin-top:64px; }
+    .stat { padding:20px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Intro -->
+<div id="page-intro" class="container">
+  <div class="intro">
+    <span class="eyebrow">16 Personalities · Mini Test</span>
+    <h1>探索你的<br><span class="gradient-text">MBTI 人格</span></h1>
+    <p>透過 28 道精心設計的題目，找出隱藏在你內心的人格類型。了解你的優勢、盲點，以及最適合你的職涯方向。</p>
+    <div class="intro-actions">
+      <button class="btn" onclick="startTest()">開始測驗 →</button>
+      <button class="btn btn-ghost" onclick="showTypes()">瀏覽 16 種人格</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong class="gradient-text">28</strong><span>道題目</span></div>
+      <div class="stat"><strong class="gradient-text">16</strong><span>種人格</span></div>
+      <div class="stat"><strong class="gradient-text">5</strong><span>分鐘完成</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Test -->
+<div id="page-test" class="container hidden">
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span id="progress-label">題目 1 / 28</span>
+      <button class="back-btn" id="back-btn" onclick="goBack()" disabled>← 上一題</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="card" id="question-card">
+    <div class="label" id="question-label">Question 01</div>
+    <h2 id="question-text">載入中…</h2>
+    <div class="options">
+      <button class="option" onclick="answer('a')">
+        <div>
+          <div class="option-title">符合</div>
+          <div class="option-sub">這聽起來就是我</div>
+        </div>
+        <span class="option-arrow">→</span>
+      </button>
+      <button class="option" onclick="answer('b')">
+        <div>
+          <div class="option-title">不符合</div>
+          <div class="option-sub">我並非如此</div>
+        </div>
+        <span class="option-arrow">→</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Result -->
+<div id="page-result" class="container hidden">
+  <a href="#" class="back-btn" onclick="goHome(); return false;" style="display:inline-block;margin-bottom:16px;">← 回首頁</a>
+
+  <div class="result-hero" id="result-hero">
+    <div class="result-hero-inner">
+      <div style="font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;">你的人格類型</div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 24px;">
+        <div class="result-code" id="res-code">INTJ</div>
+        <div>
+          <div class="result-name" id="res-name">建築師</div>
+          <div class="result-nick" id="res-nick">The Architect</div>
+        </div>
+      </div>
+      <div class="result-tagline" id="res-tagline">…</div>
+    </div>
+  </div>
+
+  <div class="card section" style="margin-top:20px;">
+    <h3>人格描述</h3>
+    <p id="res-desc">…</p>
+  </div>
+
+  <div style="display:grid;gap:20px;margin-top:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
+    <div class="card section">
+      <h3>優勢</h3>
+      <ul id="res-strengths"></ul>
+    </div>
+    <div class="card section">
+      <h3 style="color:var(--accent)">挑戰</h3>
+      <ul id="res-weaknesses"></ul>
+    </div>
+  </div>
+
+  <div class="card section" style="margin-top:20px;">
+    <h3 style="color:var(--muted)">適合的職涯方向</h3>
+    <div id="res-careers" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="startTest()">重新測驗</button>
+    <button class="btn btn-ghost" onclick="showTypes()">看其他類型</button>
+  </div>
+</div>
+
+<!-- Types list -->
+<div id="page-types" class="container hidden">
+  <a href="#" class="back-btn" onclick="goHome(); return false;" style="display:inline-block;margin-bottom:16px;">← 回首頁</a>
+  <h1 style="margin-bottom:24px;font-size:1.8rem;">16 型人格一覽</h1>
+  <div class="types-grid" id="types-grid"></div>
+</div>
+
+<script>
+const questions = [
+  {id:1,text:"在派對上，我常常主動找人聊天，越熱鬧越有活力。",dim:"EI",a:"E",b:"I"},
+  {id:2,text:"獨處一整天讓我感到放鬆而非孤單。",dim:"EI",a:"I",b:"E"},
+  {id:3,text:"我傾向先說出想法，再慢慢釐清。",dim:"EI",a:"E",b:"I"},
+  {id:4,text:"與一大群人相處後，我需要安靜時間恢復能量。",dim:"EI",a:"I",b:"E"},
+  {id:5,text:"認識新朋友讓我感到興奮。",dim:"EI",a:"E",b:"I"},
+  {id:6,text:"我寧願深入了解少數人，也不想結識很多泛泛之交。",dim:"EI",a:"I",b:"E"},
+  {id:7,text:"我在團體討論中通常是主動發言的人。",dim:"EI",a:"E",b:"I"},
+  {id:8,text:"我比較相信實際經驗，而非抽象理論。",dim:"SN",a:"S",b:"N"},
+  {id:9,text:"我常常思考事物背後的可能性與意義。",dim:"SN",a:"N",b:"S"},
+  {id:10,text:"我注重細節，喜歡按部就班完成任務。",dim:"SN",a:"S",b:"N"},
+  {id:11,text:"我喜歡天馬行空地想像未來。",dim:"SN",a:"N",b:"S"},
+  {id:12,text:"我相信「眼見為憑」，數據比直覺更可靠。",dim:"SN",a:"S",b:"N"},
+  {id:13,text:"我經常在腦中構思尚未發生的場景。",dim:"SN",a:"N",b:"S"},
+  {id:14,text:"我喜歡務實、能立即應用的建議。",dim:"SN",a:"S",b:"N"},
+  {id:15,text:"做決定時，我會優先考慮邏輯與公平。",dim:"TF",a:"T",b:"F"},
+  {id:16,text:"我容易感受到他人的情緒，並會為此調整自己的決定。",dim:"TF",a:"F",b:"T"},
+  {id:17,text:"批評若有道理，我寧願聽真話而非客套。",dim:"TF",a:"T",b:"F"},
+  {id:18,text:"維持和諧的人際關係對我很重要。",dim:"TF",a:"F",b:"T"},
+  {id:19,text:"我認為個人感受不應影響專業判斷。",dim:"TF",a:"T",b:"F"},
+  {id:20,text:"幫助他人是我生活中重要的價值。",dim:"TF",a:"F",b:"T"},
+  {id:21,text:"我會用「對或錯」來分析問題。",dim:"TF",a:"T",b:"F"},
+  {id:22,text:"我喜歡事先規劃，並按計畫執行。",dim:"JP",a:"J",b:"P"},
+  {id:23,text:"我享受隨興與彈性，不愛被計畫綁住。",dim:"JP",a:"P",b:"J"},
+  {id:24,text:"完成清單上的待辦事項會讓我很有成就感。",dim:"JP",a:"J",b:"P"},
+  {id:25,text:"我常常臨時改變主意去嘗試新事物。",dim:"JP",a:"P",b:"J"},
+  {id:26,text:"我的工作環境通常井然有序。",dim:"JP",a:"J",b:"P"},
+  {id:27,text:"截止日期前我才能爆發效率。",dim:"JP",a:"P",b:"J"},
+  {id:28,text:"我習慣為未來幾週甚至幾個月做安排。",dim:"JP",a:"J",b:"P"},
+];
+
+const types = {
+  INTJ:{code:"INTJ",name:"建築師",nick:"The Architect",tagline:"用想像力與策略，把未來變成藍圖。",desc:"INTJ 善於從複雜系統中看出規律，喜歡為長遠目標制定策略。他們獨立、果斷，對知識與能力有著無止盡的追求。",strengths:["策略思維","獨立自主","意志堅定","理性決斷"],weaknesses:["過於批判","不擅情感表達","完美主義"],careers:["科學家","策略顧問","工程師","投資分析師"],grad:"linear-gradient(135deg,#6366f1,#9333ea)"},
+  INTP:{code:"INTP",name:"邏輯學家",nick:"The Logician",tagline:"對世界保持永不止息的好奇。",desc:"INTP 熱愛探索抽象理論與概念，享受獨自思考的時光，總是試圖理解事物運作的原理。",strengths:["抽象思考","客觀分析","創新點子","獨立"],weaknesses:["容易拖延","忽略情感","過度分析"],careers:["研究員","程式設計師","哲學家","數學家"],grad:"linear-gradient(135deg,#0ea5e9,#4f46e5)"},
+  ENTJ:{code:"ENTJ",name:"指揮官",nick:"The Commander",tagline:"天生的領導者，敢做敢當。",desc:"ENTJ 充滿自信與決斷力，擅長組織人與資源，為達成目標制定有效的計畫。",strengths:["領導力","果斷","高效率","戰略眼光"],weaknesses:["固執","缺乏耐心","過於強勢"],careers:["企業高管","律師","創業家","管理顧問"],grad:"linear-gradient(135deg,#f43f5e,#dc2626)"},
+  ENTP:{code:"ENTP",name:"辯論家",nick:"The Debater",tagline:"點子王，享受腦力激盪的火花。",desc:"ENTP 思考敏捷、口才出眾，喜歡挑戰既有觀念，總能從不同角度看待問題。",strengths:["創意思考","口才","適應力","熱情"],weaknesses:["容易分心","不愛例行公事","好辯"],careers:["創業家","律師","行銷策略師","發明家"],grad:"linear-gradient(135deg,#f59e0b,#f43f5e)"},
+  INFJ:{code:"INFJ",name:"提倡者",nick:"The Advocate",tagline:"理想主義者，溫柔而堅定。",desc:"INFJ 富有同理心與洞察力，常為理想奮鬥，希望讓世界變得更好。",strengths:["洞察力","理想主義","深刻同理","創造力"],weaknesses:["過於敏感","完美主義","容易燃盡"],careers:["心理諮商師","作家","教師","社工"],grad:"linear-gradient(135deg,#14b8a6,#059669)"},
+  INFP:{code:"INFP",name:"調停者",nick:"The Mediator",tagline:"詩意的靈魂，為價值而活。",desc:"INFP 重視內在價值與真誠，對藝術、文字與人性充滿熱情。",strengths:["同理心","創造力","真誠","開放"],weaknesses:["過於理想化","不切實際","易自責"],careers:["作家","心理治療師","藝術家","設計師"],grad:"linear-gradient(135deg,#34d399,#14b8a6)"},
+  ENFJ:{code:"ENFJ",name:"主人公",nick:"The Protagonist",tagline:"天生的鼓舞者，讓人發光。",desc:"ENFJ 富有領袖魅力，擅長激勵他人，致力於促進團體和諧與成長。",strengths:["影響力","同理心","領導力","口才"],weaknesses:["過度奉獻","敏感於批評","干涉過多"],careers:["老師","人資主管","公關","政治人物"],grad:"linear-gradient(135deg,#ec4899,#f43f5e)"},
+  ENFP:{code:"ENFP",name:"競選者",nick:"The Campaigner",tagline:"熱情洋溢的自由靈魂。",desc:"ENFP 充滿創意與熱情，善於發掘事物的可能性，並感染身邊的人。",strengths:["熱情","創造力","社交力","適應力"],weaknesses:["缺乏專注","壓力下混亂","情緒化"],careers:["創業家","記者","演員","顧問"],grad:"linear-gradient(135deg,#d946ef,#ec4899)"},
+  ISTJ:{code:"ISTJ",name:"物流師",nick:"The Logistician",tagline:"務實可靠，言出必行。",desc:"ISTJ 重視傳統與責任，做事有條理、嚴謹，是團隊中最可靠的支柱。",strengths:["責任感","邏輯","可靠","井然有序"],weaknesses:["過於保守","不擅變通","情感壓抑"],careers:["會計師","法官","工程師","軍官"],grad:"linear-gradient(135deg,#64748b,#52525b)"},
+  ISFJ:{code:"ISFJ",name:"守衛者",nick:"The Defender",tagline:"默默付出，溫暖如家。",desc:"ISFJ 細心體貼、樂於助人，是團體中最溫柔的守護者。",strengths:["細心","可靠","耐心","忠誠"],weaknesses:["過度承擔","不愛改變","壓抑情緒"],careers:["護理師","教師","社工","行政"],grad:"linear-gradient(135deg,#06b6d4,#2563eb)"},
+  ESTJ:{code:"ESTJ",name:"總經理",nick:"The Executive",tagline:"井然有序的執行者。",desc:"ESTJ 擅長組織與管理，重視秩序、效率與成果。",strengths:["組織力","領導","務實","守信"],weaknesses:["固執","缺乏彈性","過於嚴格"],careers:["主管","軍官","法官","金融家"],grad:"linear-gradient(135deg,#f97316,#d97706)"},
+  ESFJ:{code:"ESFJ",name:"執政官",nick:"The Consul",tagline:"熱心助人的社交核心。",desc:"ESFJ 熱情好客、樂於照顧他人，是維繫團體和諧的重要角色。",strengths:["熱心","可靠","社交力","盡責"],weaknesses:["在乎評價","不喜衝突","難拒絕"],careers:["教師","護理師","活動策劃","業務"],grad:"linear-gradient(135deg,#fb7185,#ec4899)"},
+  ISTP:{code:"ISTP",name:"鑑賞家",nick:"The Virtuoso",tagline:"冷靜俐落，動手就上手。",desc:"ISTP 喜歡親手操作、解決實際問題，是冷靜的實務派。",strengths:["實作能力","冷靜","彈性","邏輯"],weaknesses:["過於直接","厭惡規則","情感疏離"],careers:["工程師","機師","工匠","急救人員"],grad:"linear-gradient(135deg,#71717a,#334155)"},
+  ISFP:{code:"ISFP",name:"探險家",nick:"The Adventurer",tagline:"溫柔的藝術家，自由生活。",desc:"ISFP 感性、細膩，喜歡用自己的方式體驗世界，重視美感與情感。",strengths:["藝術感","敏銳","彈性","熱情"],weaknesses:["容易焦慮","難長期規劃","敏感"],careers:["設計師","插畫家","音樂家","獸醫"],grad:"linear-gradient(135deg,#34d399,#06b6d4)"},
+  ESTP:{code:"ESTP",name:"企業家",nick:"The Entrepreneur",tagline:"活在當下的行動派。",desc:"ESTP 大膽、實際、活力十足，是行動派的探險家。",strengths:["膽識","行動力","魅力","敏銳"],weaknesses:["衝動","厭惡理論","不耐久坐"],careers:["業務","創業家","運動員","急救員"],grad:"linear-gradient(135deg,#ef4444,#f97316)"},
+  ESFP:{code:"ESFP",name:"表演者",nick:"The Entertainer",tagline:"走到哪嗨到哪的派對主角。",desc:"ESFP 熱情、樂觀，喜歡享受當下，總能感染身邊的人。",strengths:["熱情","社交","實用","觀察力"],weaknesses:["容易分心","避開衝突","難長期規劃"],careers:["演員","活動主持","公關","業務"],grad:"linear-gradient(135deg,#facc15,#ec4899)"},
+};
+
+let current = 0;
+let answers = {};
+
+function showPage(id) {
+  ['page-intro','page-test','page-result','page-types'].forEach(p => {
+    document.getElementById(p).classList.add('hidden');
+  });
+  document.getElementById(id).classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function startTest() {
+  current = 0; answers = {};
+  renderQuestion();
+  showPage('page-test');
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  document.getElementById('question-label').textContent = 'Question ' + String(current+1).padStart(2,'0');
+  document.getElementById('question-text').textContent = q.text;
+  document.getElementById('progress-label').textContent = '題目 ' + (current+1) + ' / ' + questions.length;
+  document.getElementById('progress-fill').style.width = ((current / questions.length) * 100) + '%';
+  document.getElementById('back-btn').disabled = current === 0;
+
+  const card = document.getElementById('question-card');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'fadeIn .5s ease';
+}
+
+function answer(v) {
+  const q = questions[current];
+  answers[q.id] = v;
+  if (current + 1 < questions.length) {
+    current++;
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function goBack() {
+  if (current > 0) { current--; renderQuestion(); }
+}
+
+function computeType() {
+  const s = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+  for (const q of questions) {
+    const ans = answers[q.id];
+    if (!ans) continue;
+    const letter = ans === 'a' ? q.a : q.b;
+    s[letter]++;
+  }
+  const pick = (a,b) => s[a] >= s[b] ? a : b;
+  return pick('E','I') + pick('S','N') + pick('T','F') + pick('J','P');
+}
+
+function showResult() {
+  const code = computeType();
+  const t = types[code];
+  if (!t) return;
+
+  document.getElementById('res-code').textContent = t.code;
+  document.getElementById('res-name').textContent = t.name;
+  document.getElementById('res-nick').textContent = t.nick;
+  document.getElementById('res-tagline').textContent = '「' + t.tagline + '」';
+  document.getElementById('res-desc').textContent = t.desc;
+  document.getElementById('res-hero').style.background = t.grad;
+
+  const sl = document.getElementById('res-strengths');
+  sl.innerHTML = t.strengths.map(s => '<li>'+s+'</li>').join('');
+  const wl = document.getElementById('res-weaknesses');
+  wl.innerHTML = t.weaknesses.map(s => '<li><span style="background:var(--accent);width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;"></span>'+s+'</li>').join('');
+
+  const cc = document.getElementById('res-careers');
+  cc.innerHTML = t.careers.map(c => '<span class="pill">'+c+'</span>').join('');
+
+  showPage('page-result');
+}
+
+function showTypes() {
+  const grid = document.getElementById('types-grid');
+  grid.innerHTML = '';
+  Object.values(types).forEach(t => {
+    const el = document.createElement('a');
+    el.className = 'type-row';
+    el.href = '#';
+    el.onclick = () => { showTypeDetail(t.code); return false; };
+    el.innerHTML = `
+      <div class="type-code" style="background:${t.grad};-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${t.code}</div>
+      <div class="type-info"><div class="name">${t.name}</div><div class="nick">${t.nick}</div></div>
+      <div class="type-tagline">${t.tagline}</div>
+    `;
+    grid.appendChild(el);
+  });
+  showPage('page-types');
+}
+
+function showTypeDetail(code) {
+  const t = types[code];
+  if (!t) return;
+  document.getElementById('res-code').textContent = t.code;
+  document.getElementById('res-name').textContent = t.name;
+  document.getElementById('res-nick').textContent = t.nick;
+  document.getElementById('res-tagline').textContent = '「' + t.tagline + '」';
+  document.getElementById('res-desc').textContent = t.desc;
+  document.getElementById('res-hero').style.background = t.grad;
+  document.getElementById('res-strengths').innerHTML = t.strengths.map(s => '<li>'+s+'</li>').join('');
+  document.getElementById('res-weaknesses').innerHTML = t.weaknesses.map(s => '<li><span style="background:var(--accent);width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;"></span>'+s+'</li>').join('');
+  document.getElementById('res-careers').innerHTML = t.careers.map(c => '<span class="pill">'+c+'</span>').join('');
+  showPage('page-result');
+}
+
+function goHome() {
+  showPage('page-intro');
+}
+
+// Animate in keyframes
+const style = document.createElement('style');
+style.textContent = `
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+`;
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>
