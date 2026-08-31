@@ -1,0 +1,482 @@
+<html lang="zh-Hant"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>摩斯密碼雙向聲音練習器</title>
+<style>
+:root{
+  --bg:#0f1115;--card:#191d24;--text:#f4f7fb;--muted:#9aa4b2;
+  --line:#303846;--accent:#5ea1ff;--good:#6ee7a8;--bad:#ff7b7b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+}
+.wrap{max-width:900px;margin:auto;padding:18px}
+h1{font-size:24px;margin:6px 0 18px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:16px;margin:12px 0;
+}
+h2{font-size:18px;margin:0 0 12px}
+textarea,input,select{
+  width:100%;background:#0d1015;color:var(--text);border:1px solid var(--line);
+  border-radius:10px;padding:11px;font-size:16px;
+}
+textarea{min-height:90px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+@media(max-width:650px){.row{grid-template-columns:1fr}}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px}
+button{
+  border:0;border-radius:11px;padding:11px 14px;font-size:16px;font-weight:700;
+  cursor:pointer;background:var(--accent);color:#07121f;
+}
+button.secondary{background:#2a313d;color:var(--text)}
+button.stop{background:#ff8b8b;color:#2a0505}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.output{
+  min-height:58px;background:#0d1015;border:1px solid var(--line);border-radius:10px;
+  padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  white-space:pre-wrap;word-break:break-word;font-size:18px;
+}
+.big{font-size:24px;line-height:1.55}
+.status{font-size:14px;color:var(--muted);margin-top:9px}
+.meter{
+  height:16px;background:#0d1015;border-radius:999px;border:1px solid var(--line);
+  overflow:hidden;margin-top:10px
+}
+.bar{height:100%;width:0%;background:var(--good);transition:width .04s linear}
+.pill{
+  display:inline-block;border:1px solid var(--line);border-radius:999px;
+  padding:5px 9px;font-size:13px;color:var(--muted);margin-right:6px
+}
+.kbd{font-family:monospace;background:#0d1015;border:1px solid var(--line);padding:2px 6px;border-radius:5px}
+.small{font-size:13px;color:var(--muted);line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>摩斯密碼雙向聲音練習器</h1>
+
+  <div class="card">
+    <h2>① 文字 → 摩斯 → 聲音</h2>
+    <textarea id="textIn" placeholder="輸入英文或數字，例如 HELLO SOS">SOS</textarea>
+
+    <div class="row">
+      <div>
+        <label>速度 WPM</label>
+        <input id="wpm" type="number" min="3" max="60" value="18">
+      </div>
+      <div>
+        <label>音調 Hz</label>
+        <input id="freq" type="number" min="200" max="1500" value="700">
+      </div>
+      <div>
+        <label>音量 0–1</label>
+        <input id="volume" type="number" min="0.02" max="1" step="0.05" value="0.35">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="encodeBtn">轉成摩斯</button>
+      <button id="playBtn">▶ 播放</button>
+      <button id="stopPlayBtn" class="stop">■ 停止</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>摩斯碼</label>
+      <div id="morseOut" class="output big">.-.. .. / ... .. / ... .. / -... . .. / -.-. .... ..</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 麥克風摩斯聲音 → 文字</h2>
+    <div>
+      <span class="pill">點 = 1 單位</span>
+      <span class="pill">線 = 3 單位</span>
+      <span class="pill">字母間隔 ≈ 3</span>
+      <span class="pill">單字間隔 ≈ 7</span>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>偵測音調 Hz</label>
+        <input id="listenFreq" type="number" min="200" max="1500" value="700">
+      </div>
+      <div>
+        <label>預估速度 WPM</label>
+        <input id="listenWpm" type="number" min="3" max="60" value="18">
+      </div>
+      <div>
+        <label>靈敏度</label>
+        <input id="sensitivity" type="range" min="1" max="100" value="38">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="micBtn">🎙 開始麥克風解碼</button>
+      <button id="micStopBtn" class="stop">停止麥克風</button>
+      <button id="clearBtn" class="secondary">清除</button>
+    </div>
+
+    <div class="meter"><div id="bar" class="bar"></div></div>
+    <div id="micStatus" class="status">尚未啟動麥克風。</div>
+
+    <div style="margin-top:12px">
+      <label>目前字母的點線</label>
+      <div id="symbolNow" class="output">—</div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>解碼文字</label>
+      <div id="decoded" class="output big"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ 手動按鍵練習</h2>
+    <div class="small">
+      按住畫面上的按鈕，或電腦鍵盤按住 <span class="kbd">Space</span> 發聲。
+      按得短會判成「·」，長會判成「−」；停頓後自動組成字母。
+    </div>
+    <div class="actions">
+      <button id="keyBtn" style="min-width:180px">按住發報</button>
+      <button id="keyClear" class="secondary">清除手動結果</button>
+    </div>
+    <div style="margin-top:12px">
+      <label>手動解碼</label>
+      <div id="manualDecoded" class="output big"></div>
+    </div>
+  </div>
+
+  <div class="card small">
+    <b>提示：</b>麥克風模式最適合接收單一、乾淨的固定音調，例如本頁播放的 700 Hz。
+    房間噪音、手機喇叭失真或回音太強時，可調整「靈敏度」。
+    iPhone / Safari 第一次使用會詢問麥克風權限，而且頁面通常需要由 HTTPS 開啟才能使用麥克風。
+  </div>
+</div>
+
+<script>
+const MORSE = {
+  A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",G:"--.",H:"....",I:"..",
+  J:".---",K:"-.-",L:".-..",M:"--",N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",
+  S:"...",T:"-",U:"..-",V:"...-",W:".--",X:"-..-",Y:"-.--",Z:"--..",
+  0:"-----",1:".----",2:"..---",3:"...--",4:"....-",5:".....",
+  6:"-....",7:"--...",8:"---..",9:"----.",
+  ".":".-.-.-",",":"--..--","?":"..--..","/":"-..-.","=":"-...-","+":".-.-.",
+  "-":"-....-","(":"-.--.",")":"-.--.-"
+};
+const REVERSE = Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+
+const $ = id => document.getElementById(id);
+
+function textToMorse(s){
+  return s.toUpperCase().trim().split(/\s+/).map(word =>
+    [...word].map(ch => MORSE[ch] || "").filter(Boolean).join(" ")
+  ).join(" / ");
+}
+
+function renderMorse(){
+  $("morseOut").textContent = textToMorse($("textIn").value) || "—";
+}
+renderMorse();
+
+let playCtx=null, playNodes=[];
+function stopPlayback(){
+  playNodes.forEach(n=>{try{n.stop()}catch(e){}});
+  playNodes=[];
+  if(playCtx){ try{playCtx.close()}catch(e){}; playCtx=null; }
+}
+
+async function playMorse(){
+  stopPlayback();
+  renderMorse();
+
+  const wpm=Math.max(3, Number($("wpm").value)||18);
+  const hz=Math.max(100, Number($("freq").value)||700);
+  const volume=Math.max(.01, Math.min(1, Number($("volume").value)||.35));
+  const unit=1.2/wpm; // PARIS standard: dot duration
+  const msg=$("textIn").value.toUpperCase();
+
+  playCtx=new (window.AudioContext||window.webkitAudioContext)();
+  await playCtx.resume();
+
+  let t=playCtx.currentTime+.08;
+
+  function tone(duration){
+    const osc=playCtx.createOscillator();
+    const gain=playCtx.createGain();
+    osc.frequency.value=hz;
+    osc.type="sine";
+    gain.gain.setValueAtTime(0,t);
+    gain.gain.linearRampToValueAtTime(volume,t+.004);
+    gain.gain.setValueAtTime(volume,Math.max(t+.004,t+duration-.004));
+    gain.gain.linearRampToValueAtTime(0,t+duration);
+    osc.connect(gain).connect(playCtx.destination);
+    osc.start(t); osc.stop(t+duration+.01);
+    playNodes.push(osc);
+    t+=duration;
+  }
+
+  const words=msg.trim().split(/\s+/);
+  words.forEach((word,wi)=>{
+    const chars=[...word].filter(ch=>MORSE[ch]);
+    chars.forEach((ch,ci)=>{
+      const code=MORSE[ch];
+      [...code].forEach((sym,si)=>{
+        tone(sym==="."?unit:unit*3);
+        if(si<code.length-1) t+=unit;
+      });
+      if(ci<chars.length-1) t+=unit*3;
+    });
+    if(wi<words.length-1) t+=unit*7;
+  });
+}
+
+$("encodeBtn").onclick=renderMorse;
+$("textIn").addEventListener("input",renderMorse);
+$("playBtn").onclick=playMorse;
+$("stopPlayBtn").onclick=stopPlayback;
+
+
+/* =========================
+   Microphone decoder
+   ========================= */
+let micCtx=null, analyser=null, micStream=null, raf=null;
+let prevTone=false;
+let stateStarted=0;
+let currentCode="";
+let decodedText="";
+let letterCommittedForGap=false;
+let wordCommittedForGap=false;
+let noiseFloor=0.006;
+
+function getUnit(){
+  return 1.2/Math.max(3,Number($("listenWpm").value)||18);
+}
+
+function commitLetter(){
+  if(!currentCode) return;
+  const ch=REVERSE[currentCode] || "□";
+  decodedText+=ch;
+  currentCode="";
+  $("decoded").textContent=decodedText;
+  $("symbolNow").textContent="—";
+}
+
+function appendSpace(){
+  if(decodedText && !decodedText.endsWith(" ")){
+    decodedText+=" ";
+    $("decoded").textContent=decodedText;
+  }
+}
+
+function targetEnergy(an,ctx,hz){
+  const bins=new Uint8Array(an.frequencyBinCount);
+  an.getByteFrequencyData(bins);
+  const binHz=ctx.sampleRate/an.fftSize;
+  const center=hz/binHz;
+  let sum=0, weight=0;
+  for(let i=-2;i<=2;i++){
+    const idx=Math.round(center+i);
+    if(idx>=0 && idx<bins.length){
+      const w=(i===0?1.5:1);
+      sum += (bins[idx]/255)*w;
+      weight += w;
+    }
+  }
+  return weight?sum/weight:0;
+}
+
+async function startMic(){
+  stopMic();
+  decodedText="";
+  currentCode="";
+  $("decoded").textContent="";
+  $("symbolNow").textContent="—";
+
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({
+      audio:{
+        echoCancellation:false,
+        noiseSuppression:false,
+        autoGainControl:false
+      }
+    });
+
+    micCtx=new (window.AudioContext||window.webkitAudioContext)();
+    await micCtx.resume();
+    const src=micCtx.createMediaStreamSource(micStream);
+    analyser=micCtx.createAnalyser();
+    analyser.fftSize=4096;
+    analyser.smoothingTimeConstant=.45;
+    src.connect(analyser);
+
+    prevTone=false;
+    stateStarted=performance.now()/1000;
+    letterCommittedForGap=false;
+    wordCommittedForGap=false;
+    noiseFloor=.006;
+    $("micStatus").textContent="正在聆聽…";
+
+    const loop=()=>{
+      const now=performance.now()/1000;
+      const hz=Math.max(100,Number($("listenFreq").value)||700);
+      const e=targetEnergy(analyser,micCtx,hz);
+
+      // slowly learn low background level
+      if(!prevTone) noiseFloor=noiseFloor*.995 + e*.005;
+
+      const sensitivity=Number($("sensitivity").value)||38;
+      const base=0.025 + (100-sensitivity)*0.0017;
+      const threshold=Math.max(base, noiseFloor*2.5);
+      const tone=e>threshold;
+
+      $("bar").style.width=Math.min(100,e*180)+"%";
+      $("micStatus").textContent=
+        `正在聆聽 ${hz} Hz｜訊號 ${(e*100).toFixed(1)}%｜門檻 ${(threshold*100).toFixed(1)}%`;
+
+      const unit=getUnit();
+
+      if(tone!==prevTone){
+        const dur=now-stateStarted;
+
+        if(prevTone && !tone){
+          // Tone just ended
+          const sym = dur < unit*2.0 ? "." : "-";
+          currentCode += sym;
+          $("symbolNow").textContent=currentCode;
+          letterCommittedForGap=false;
+          wordCommittedForGap=false;
+        }else if(!prevTone && tone){
+          // Silence just ended; classify completed gap
+          if(dur >= unit*6.0){
+            commitLetter();
+            appendSpace();
+          }else if(dur >= unit*2.2){
+            commitLetter();
+          }
+        }
+
+        prevTone=tone;
+        stateStarted=now;
+      }else if(!tone){
+        const silence=now-stateStarted;
+        if(currentCode && silence>=unit*2.2 && !letterCommittedForGap){
+          commitLetter();
+          letterCommittedForGap=true;
+        }
+        if(decodedText && silence>=unit*6.0 && !wordCommittedForGap){
+          appendSpace();
+          wordCommittedForGap=true;
+        }
+      }
+
+      raf=requestAnimationFrame(loop);
+    };
+    loop();
+  }catch(err){
+    $("micStatus").textContent="無法啟動麥克風："+err.message;
+  }
+}
+
+function stopMic(){
+  if(raf){cancelAnimationFrame(raf);raf=null;}
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+  if(micCtx){try{micCtx.close()}catch(e){};micCtx=null;}
+  $("bar").style.width="0%";
+  $("micStatus").textContent="麥克風已停止。";
+}
+$("micBtn").onclick=startMic;
+$("micStopBtn").onclick=stopMic;
+$("clearBtn").onclick=()=>{
+  decodedText="";currentCode="";
+  $("decoded").textContent="";
+  $("symbolNow").textContent="—";
+};
+
+
+/* =========================
+   Manual keyer
+   ========================= */
+let keyCtx=null,keyOsc=null,keyGain=null,keyDownAt=0;
+let manualCode="",manualText="",manualTimer=null,manualWordTimer=null;
+let isKeyDown=false;
+
+function manualUnit(){
+  return 1.2/Math.max(3,Number($("wpm").value)||18);
+}
+
+async function keyDown(){
+  if(isKeyDown)return;
+  isKeyDown=true;
+  clearTimeout(manualTimer);clearTimeout(manualWordTimer);
+
+  keyDownAt=performance.now()/1000;
+  keyCtx = keyCtx || new (window.AudioContext||window.webkitAudioContext)();
+  await keyCtx.resume();
+
+  keyOsc=keyCtx.createOscillator();
+  keyGain=keyCtx.createGain();
+  keyOsc.frequency.value=Math.max(100,Number($("freq").value)||700);
+  keyGain.gain.value=Math.max(.01,Math.min(1,Number($("volume").value)||.35));
+  keyOsc.connect(keyGain).connect(keyCtx.destination);
+  keyOsc.start();
+  $("keyBtn").textContent="發報中…";
+}
+
+function manualCommit(){
+  if(!manualCode)return;
+  manualText += REVERSE[manualCode] || "□";
+  manualCode="";
+  $("manualDecoded").textContent=manualText;
+}
+function keyUp(){
+  if(!isKeyDown)return;
+  isKeyDown=false;
+  const dur=performance.now()/1000-keyDownAt;
+  const unit=manualUnit();
+  manualCode += dur<unit*2 ? "." : "-";
+
+  if(keyOsc){try{keyOsc.stop()}catch(e){};keyOsc=null;}
+  $("keyBtn").textContent=`${manualCode}　按住發報`;
+
+  manualTimer=setTimeout(()=>{
+    manualCommit();
+    $("keyBtn").textContent="按住發報";
+  },unit*3*1000);
+
+  manualWordTimer=setTimeout(()=>{
+    manualCommit();
+    if(manualText && !manualText.endsWith(" ")){
+      manualText+=" ";
+      $("manualDecoded").textContent=manualText;
+    }
+    $("keyBtn").textContent="按住發報";
+  },unit*7*1000);
+}
+
+const keyBtn=$("keyBtn");
+["pointerdown","touchstart"].forEach(ev=>keyBtn.addEventListener(ev,e=>{e.preventDefault();keyDown()},{passive:false}));
+["pointerup","pointercancel","pointerleave","touchend"].forEach(ev=>keyBtn.addEventListener(ev,e=>{e.preventDefault();keyUp()},{passive:false}));
+
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space" && !e.repeat && document.activeElement.tagName!=="TEXTAREA" && document.activeElement.tagName!=="INPUT"){
+    e.preventDefault();keyDown();
+  }
+});
+document.addEventListener("keyup",e=>{
+  if(e.code==="Space"){
+    e.preventDefault();keyUp();
+  }
+});
+
+$("keyClear").onclick=()=>{
+  manualText="";manualCode="";
+  $("manualDecoded").textContent="";
+  $("keyBtn").textContent="按住發報";
+};
+</script>
+
+
+</body></html>
