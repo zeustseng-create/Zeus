@@ -1,4 +1,4 @@
-<html lang="zh-Hant" data-p2p-browser-blocked="1"><head>
+<html lang="zh-Hant"><head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#080a12">
@@ -35,27 +35,27 @@ button,input{font:inherit}button{touch-action:none;border:0;color:#fff;cursor:po
 </style>
 </head>
 <body>
-<div id="browser-gate" class="browser-gate active" role="dialog" aria-modal="true" aria-labelledby="browser-gate-title">
+<div id="browser-gate" class="browser-gate" role="dialog" aria-modal="true" aria-labelledby="browser-gate-title">
   <div class="browser-gate-card">
     <div class="browser-gate-icon">↗</div>
-    <div class="eyebrow">BROWSER REQUIRED · v2.0.3</div>
+    <div class="eyebrow">BROWSER REQUIRED · v2.0.4</div>
     <h1 id="browser-gate-title">請使用 Safari 或 Chrome 開啟</h1>
     <p>目前是 App 內建瀏覽器，iOS 會限制 AirDrop／系統分享。請改用 Safari 或 Chrome 開啟同一個網址。</p>
     <div class="steps">1. 點右上角「⋯」或分享按鈕<br>2. 選「在 Safari 中開啟」或「在 Chrome 中開啟」<br>3. 再按「建立 P2P 對戰」</div>
     <button id="browser-gate-copy" class="main-action">複製目前網址</button>
     <p id="browser-gate-status" class="screen-copy" aria-live="polite"></p>
-    <div class="version-badge">LAN TETRIS P2P · v2.0.3</div>
+    <div class="version-badge">LAN TETRIS P2P · v2.0.4</div>
   </div>
 </div>
 
-<div id="app-shell" aria-hidden="true" style="pointer-events: none;">
+<div id="app-shell">
   <section id="home-screen" class="app-screen active" aria-label="P2P 首頁">
     <div class="screen-card home-card">
       <div class="logo-block">TETRIS <b>P2P</b></div>
       <p id="home-message" class="screen-copy">兩台 iPhone 請連上同一個 Wi-Fi。第一次離線使用前，兩台都先載入過這個 PWA。</p>
       <input id="name-input" maxlength="16" autocomplete="off" inputmode="text" placeholder="玩家名稱">
       <button id="p2p-create-btn" class="main-action">建立 P2P 對戰</button>
-      <div class="version-badge">v2.0.3 · Safari / Chrome</div>
+      <div class="version-badge">v2.0.4 · Safari / Chrome</div>
       <div id="manual-join-card" class="p2p-card" hidden="">
         <div class="eyebrow">LOCAL FILE MODE</div><strong>貼上另一台 iPhone 的邀請碼</strong>
         <textarea id="p2p-manual-input" class="signal-code" rows="4" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="offer...."></textarea>
@@ -164,10 +164,10 @@ button,input{font:inherit}button{touch-action:none;border:0;color:#fff;cursor:po
     ua=String(ua||''); platform=String(platform||'');
     const isIOS=/iPhone|iPad|iPod/i.test(ua)||(platform==='MacIntel'&&Number(maxTouchPoints)>1);
     if(!isIOS) return true;
-    const isChrome=/CriOS\//i.test(ua);
-    const isEmbedded=/(GSA|GoogleApp|FBAN|FBAV|Line\/|Instagram|FxiOS|EdgiOS|OPiOS)/i.test(ua);
-    const isSafari=/Version\/[\d.]+.*Safari\//i.test(ua)&&!isEmbedded;
-    return isChrome||isSafari;
+    // iOS browser UA strings are not stable enough for a strict Safari/CriOS whitelist.
+    // Block only browser shells we can positively identify as in-app webviews.
+    const isEmbedded=/(GSA|GoogleApp|FBAN|FBAV|FB_IAB|Line\/|Instagram|MessengerForiOS|TikTok|BytedanceWebview)/i.test(ua);
+    return !isEmbedded;
   }
   window.isSupportedP2PBrowser=isSupportedP2PBrowser;
   const allowed=isSupportedP2PBrowser(navigator.userAgent,navigator.platform,navigator.maxTouchPoints);
